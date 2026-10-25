@@ -161,6 +161,40 @@
   #blCanvas { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 8px 0 #0005; cursor: crosshair; touch-action: none; display: block; }
   #blMsg { font-size: 1.5rem; min-height: 2em; margin-top: 8px; }
   #blRead { font-size: 1.1rem; padding: 6px 16px; margin-left: 12px; vertical-align: middle; }
+  /* crossword */
+  #crosswordGame { max-width: 1100px; }
+  #crosswordGame.mode > div { width: 100%; text-align: center; }
+  #cwGame, #cwEnd { display: none; }
+  #cwEnd .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
+  #cwClueBar {
+    font-size: 1.4rem; line-height: 1.35; padding: 10px 16px; margin: 4px auto 14px; border-radius: 14px;
+    background: #0004; border: 2px solid #ffd84a55; max-width: 820px; min-height: 2.7em;
+  }
+  #cwClueBar b { color: #ffd84a; margin-right: 6px; }
+  #cwClueBar button { font-size: 1rem; padding: 5px 12px; margin-left: 8px; vertical-align: middle; box-shadow: 0 3px 0 #b88f00; }
+  #cwMain { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; align-items: flex-start; }
+  #cwGrid { display: grid; touch-action: manipulation; }
+  .cw-cell {
+    position: relative; display: flex; align-items: center; justify-content: center; margin: -1px 0 0 -1px;
+    background: #fff6d0; color: #3a2400; border: 2px solid #3a2400; font-weight: bold; cursor: pointer; user-select: none;
+  }
+  .cw-cell.blank { background: none; border-color: transparent; cursor: default; }
+  .cw-num { position: absolute; top: 1px; left: 3px; font-weight: bold; line-height: 1; opacity: .8; }
+  .cw-cell.in-word { background: #ffe27a; }
+  .cw-cell.cur { background: #ffbf1f; box-shadow: inset 0 0 0 3px #fff; }
+  .cw-cell.solved { background: #bff5cb; }
+  .cw-cell.solved.in-word { background: #97e6aa; }
+  .cw-cell.wrong { background: #ffb3b3; animation: shake 0.4s; }
+  #cwClues { display: flex; gap: 18px; text-align: left; max-width: 460px; }
+  #cwClues > div { flex: 1; min-width: 190px; }
+  #cwClues h3 { color: #ffd84a; margin: 0 0 6px; font-size: 1.2rem; }
+  #cwClues ol { list-style: none; padding: 0; margin: 0; }
+  #cwClues li { padding: 5px 8px; border-radius: 8px; cursor: pointer; font-size: 1rem; line-height: 1.3; }
+  #cwClues li b { color: #ffd84a; margin-right: 4px; }
+  #cwClues li.active { background: #ffd84a33; }
+  #cwClues li.solved { color: #8fe0a3; }
+  #cwClues li.solved::after { content: ' ✓'; }
+  #cwMsg { font-size: 1.4rem; min-height: 1.6em; margin-top: 12px; }
 </style>
 </head>
 <body>
@@ -171,6 +205,7 @@
     <button id="tabScramble">🔤 Word Scramble</button>
     <button id="tabDecode">🔐 Code Breaker</button>
     <button id="tabBlaster">☄️ Blaster</button>
+    <button id="tabCrossword">✏️ Crossword</button>
   </div>
   <div id="listBar"><label>Word list: <select id="listPick"></select></label></div>
 
@@ -297,7 +332,40 @@
     </div>
   </div>
 
+  <div id="crosswordGame" class="mode" style="display:none">
+    <div id="cwStart">
+      <p style="font-size:1.4rem">Solve the crossword! Read the clue, then type the word.<br>
+        Click a square to pick a word, or press ← → for the previous or next clue.<br>
+        1000 pts for each word you get right the first time.</p>
+      <div id="cwNone" style="color:#ff9b9b; margin-bottom:12px"></div>
+      <button id="cwGo">Start!</button>
+    </div>
+    <div id="cwGame">
+      <div class="hud">
+        <div>Words <b id="cwDone">0</b> / <b id="cwTotal">0</b></div>
+        <div>Score <b id="cwScore">0</b></div>
+      </div>
+      <div id="cwClueBar"><b id="cwClueNum"></b><span id="cwClueText"></span><button id="cwHearClue">🔊 Clue</button><button id="cwHearWord">🔊 Word</button></div>
+      <div id="cwMain">
+        <div id="cwGrid"></div>
+        <div id="cwClues">
+          <div><h3>Across</h3><ol id="cwAcross"></ol></div>
+          <div><h3>Down</h3><ol id="cwDown"></ol></div>
+        </div>
+      </div>
+      <div id="cwMsg"></div>
+    </div>
+    <div id="cwEnd">
+      <div style="font-size:2rem">🎉 Puzzle solved! 🎉</div>
+      <div class="score"><span id="cwFinal">0</span> pts</div>
+      <div id="cwOutOf" style="font-size:1.3rem; margin-bottom:8px"></div>
+      <div id="cwMissed" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
+      <button id="cwAgain">🔄 New puzzle</button>
+    </div>
+  </div>
+
 <script src="words.js"></script>
+<script src="meanings.js"></script>
 <script>
 // Helpers shared by all the games
 const $ = id => document.getElementById(id);
@@ -1052,7 +1120,7 @@ const blaster = (function () {
   // --- rounds ---
   function newGame() {
     words = shuffle(WORDS.filter(w => w.meaning && w.lookalikes && w.lookalikes.length));
-    if (!words.length) { $('blNone').textContent = 'This word list has no meanings yet, so the Blaster game can\'t use it.'; return; }
+    if (!words.length) { $('blNone').textContent = 'This word list doesn\'t have look-alike words yet, so the Blaster game can\'t use it.'; return; }
     $('blNone').textContent = '';
     idx = 0; score = 0; missed = [];
     ship.x = ship.target = W / 2;
@@ -1305,6 +1373,390 @@ const blaster = (function () {
   return { stop };
 })();
 
+// ===== Crossword =====
+const crossword = (function () {
+  const POINTS = [1000, 500, 250]; // by how many wrong tries before getting the word
+  const ATTEMPTS = 300;            // random layouts tried; the best one is kept
+  const BONUS_ATTEMPTS = 80;       // more tries with bonus words, only if the words alone don't all connect
+  const BONUS_LOOK = 60;           // how many bonus-word candidates to compare (nearest lists first)
+  const panels = ['cwStart', 'cwGame', 'cwEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+  const key = (r, c) => r + ',' + c;
+  const STEP = { across: [0, 1], down: [1, 0] };
+
+  // --- Building a puzzle ---
+  // Can `ans` go at (r, c) in direction dir? Returns the number of crossings, or -1 if not.
+  function fits(grid, ans, r, c, dir) {
+    const [dr, dc] = STEP[dir];
+    if (grid.has(key(r - dr, c - dc)) || grid.has(key(r + dr * ans.length, c + dc * ans.length))) return -1;
+    let crossings = 0;
+    for (let k = 0; k < ans.length; k++) {
+      const rr = r + dr * k, cc = c + dc * k, cell = grid.get(key(rr, cc));
+      if (cell) {
+        if (cell.ch !== ans[k] || cell.dirs.has(dir)) return -1;
+        crossings++;
+      } else if (grid.has(key(rr + dc, cc + dr)) || grid.has(key(rr - dc, cc - dr))) {
+        return -1; // a new letter can't touch a word running alongside it
+      }
+    }
+    return crossings;
+  }
+
+  // Put a word in the grid; returns the new squares so it can be taken out again
+  function put(grid, ans, r, c, dir) {
+    const [dr, dc] = STEP[dir], added = [];
+    for (let k = 0; k < ans.length; k++) {
+      const id = key(r + dr * k, c + dc * k);
+      if (!grid.has(id)) { grid.set(id, { ch: ans[k], dirs: new Set() }); added.push(id); }
+      grid.get(id).dirs.add(dir);
+    }
+    return added;
+  }
+  function unput(grid, ans, r, c, dir, added) {
+    const [dr, dc] = STEP[dir];
+    for (let k = 0; k < ans.length; k++) grid.get(key(r + dr * k, c + dc * k)).dirs.delete(dir);
+    added.forEach(id => grid.delete(id));
+  }
+
+  // Every place a word could go, crossing at least one word already in the grid
+  function spots(grid, ans) {
+    const out = [];
+    for (const [id, cell] of grid) {
+      const [r, c] = id.split(',').map(Number);
+      for (let i = 0; i < ans.length; i++) {
+        if (ans[i] !== cell.ch) continue;
+        for (const dir of ['across', 'down']) {
+          if (cell.dirs.has(dir)) continue;
+          const sr = dir === 'down' ? r - i : r, sc = dir === 'across' ? c - i : c;
+          const x = fits(grid, ans, sr, sc, dir);
+          if (x >= 1) out.push({ r: sr, c: sc, dir, x });
+        }
+      }
+    }
+    return out;
+  }
+
+  // Lay out the words in this order. Words that can't cross anything get a bonus word
+  // (from `bonusPool`) to connect them; if that fails too, they start a separate group.
+  function layout(entries, wander, bonusPool) {
+    const grid = new Map(), placed = [], used = new Set(entries.map(e => e.answer));
+    let box = null, islands = 1, bonus = 0;
+    const place = (w, r, c, dir) => {
+      put(grid, w.answer, r, c, dir);
+      placed.push({ ...w, r, c, dir });
+      const r1 = dir === 'down' ? r + w.answer.length - 1 : r, c1 = dir === 'across' ? c + w.answer.length - 1 : c;
+      box = box ? { r0: Math.min(box.r0, r), c0: Math.min(box.c0, c), r1: Math.max(box.r1, r1), c1: Math.max(box.c1, c1) }
+                : { r0: r, c0: c, r1, c1 };
+    };
+    const areaWith = (s, len) => {
+      const r1 = s.dir === 'down' ? s.r + len - 1 : s.r, c1 = s.dir === 'across' ? s.c + len - 1 : s.c;
+      return (Math.max(box.r1, r1) - Math.min(box.r0, s.r) + 1) * (Math.max(box.c1, c1) - Math.min(box.c0, s.c) + 1);
+    };
+    // the best spot: more crossings, smaller puzzle, plus some randomness
+    const pick = (list, len) => list.reduce((b, s) => {
+      s.score = s.x * 100 - areaWith(s, len) + Math.random() * wander;
+      return !b || s.score > b.score ? s : b;
+    }, null);
+
+    const [first, ...rest] = entries;
+    place(first, 0, 0, 'across');
+    let pending = rest;
+    while (pending.length) {
+      // place every word that can cross a word already there, until none can
+      let progress = true;
+      while (pending.length && progress) {
+        progress = false;
+        const still = [];
+        for (const w of pending) {
+          const s = pick(spots(grid, w.answer), w.answer.length);
+          if (s) { place(w, s.r, s.c, s.dir); progress = true; } else still.push(w);
+        }
+        pending = still;
+      }
+      if (!pending.length) break;
+      // Try a bonus word that crosses the puzzle and gives stuck words somewhere to cross.
+      // Pick the one that helps the most stuck words (ties go to the nearest list).
+      let bestB = null;
+      for (const b of (bonusPool || []).slice(0, BONUS_LOOK)) {
+        if (used.has(b.answer)) continue;
+        for (const sb of spots(grid, b.answer)) {
+          const added = put(grid, b.answer, sb.r, sb.c, sb.dir);
+          const helped = pending.filter(w => spots(grid, w.answer).length).length;
+          unput(grid, b.answer, sb.r, sb.c, sb.dir, added);
+          if (helped && (!bestB || helped > bestB.helped)) bestB = { b, sb, helped };
+        }
+      }
+      if (bestB) {
+        place(bestB.b, bestB.sb.r, bestB.sb.c, bestB.sb.dir);
+        used.add(bestB.b.answer); bonus++;
+        continue; // the stuck words get placed by the loop above
+      }
+      // no bonus word helps: start a separate little group, one empty row or column away
+      const w = pending.shift();
+      const wide = box.c1 - box.c0 >= box.r1 - box.r0;
+      if (wide) place(w, box.r1 + 2, box.c0, 'across'); else place(w, box.r0, box.c1 + 2, 'down');
+      islands++;
+    }
+    // best: fewest separate groups, then fewest bonus words, then the smallest puzzle
+    const area = (box.r1 - box.r0 + 1) * (box.c1 - box.c0 + 1);
+    return { placed, box, islands, score: -islands * 100000 - bonus * 1000 - area };
+  }
+
+  function build(entries, bonusPool) {
+    let best = null;
+    // Each try starts from a random word in the list; after that, longer words first usually
+    // works best, with some shuffling so each try is different. Every other try also picks
+    // spots more randomly.
+    const order = () => {
+      const [first, ...rest] = shuffle(entries);
+      return [first, ...rest.sort((x, y) => y.answer.length - x.answer.length + (Math.random() - 0.5) * 4)];
+    };
+    for (let a = 0; a < ATTEMPTS; a++) {
+      const l = layout(order(), a % 2 ? 1 : 400, null);
+      if (!best || l.score > best.score) best = l;
+    }
+    // not all connected? try again, allowing bonus words
+    for (let a = 0; best.islands > 1 && a < BONUS_ATTEMPTS; a++) {
+      const l = layout(order(), a % 2 ? 1 : 400, bonusPool);
+      if (l.score > best.score) best = l;
+    }
+    // shift so the top-left is (0, 0), then number the words like a real crossword
+    const { placed, box } = best;
+    placed.forEach(w => { w.r -= box.r0; w.c -= box.c0; });
+    const starts = [...new Set(placed.map(w => key(w.r, w.c)))]
+      .map(id => id.split(',').map(Number)).sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+    const numOf = new Map(starts.map(([r, c], i) => [key(r, c), i + 1]));
+    placed.forEach(w => { w.num = numOf.get(key(w.r, w.c)); });
+    const byNum = (p, q) => p.num - q.num;
+    return {
+      rows: box.r1 - box.r0 + 1, cols: box.c1 - box.c0 + 1, numOf,
+      // ← → order: all the Across clues by number, then all the Down clues
+      words: [...placed.filter(w => w.dir === 'across').sort(byNum), ...placed.filter(w => w.dir === 'down').sort(byNum)],
+    };
+  }
+
+  // --- Playing ---
+  let puzzle, cells, cur, pos, score, done, running = false, nextTimer;
+
+  function newGame() {
+    clearTimeout(nextTimer);
+    // Words need a meaning (the clue) and at least two letters. Apostrophes are left out of the grid.
+    const seen = new Set();
+    const entries = WORDS.map(w => ({ word: w.word, clue: w.meaning, answer: w.word.toLowerCase().replace(/[^a-z]/g, '') }))
+      .filter(w => w.clue && w.answer.length >= 2 && !seen.has(w.answer) && seen.add(w.answer));
+    if (entries.length < 2) { $('cwNone').textContent = 'This word list doesn\'t have enough words with meanings for a crossword.'; return; }
+    $('cwNone').textContent = '';
+    // Bonus words, to connect words that can't cross anything else: words from other lists.
+    // Same series first (LMB with LMB), nearest earlier lists before later ones (he has
+    // practiced those), then any other lists; each list's words in random order.
+    const here = WORD_LISTS.findIndex(l => l.words === WORDS);
+    const series = l => l.name.replace(/\s*\d+$/, '');
+    const rank = i => (series(WORD_LISTS[i]) === series(WORD_LISTS[here]) ? 0 : 2000) + (i > here ? 1000 : 0) + Math.abs(i - here);
+    const bonusPool = [];
+    WORD_LISTS.map((l, i) => ({ l, i })).sort((p, q) => rank(p.i) - rank(q.i))
+      .forEach(({ l }) => shuffle(l.words).forEach(w => {
+        const answer = w.word.toLowerCase().replace(/[^a-z]/g, '');
+        if (w.meaning && /^[a-z]+$/i.test(w.word) && answer.length >= 3 && answer.length <= 6 && !seen.has(answer)) {
+          seen.add(answer);
+          bonusPool.push({ word: w.word, clue: w.meaning, answer, bonus: true });
+        }
+      }));
+    puzzle = build(entries, bonusPool);
+    puzzle.words.forEach(w => { w.tries = 0; w.solved = false; w.cells = []; });
+
+    // one entry per square, knowing which words go through it
+    cells = new Map();
+    for (const w of puzzle.words) {
+      const [dr, dc] = STEP[w.dir];
+      for (let k = 0; k < w.answer.length; k++) {
+        const id = key(w.r + dr * k, w.c + dc * k);
+        if (!cells.has(id)) cells.set(id, { ch: w.answer[k], letter: '', locked: false, words: [] });
+        cells.get(id).words.push(w);
+        w.cells.push(id);
+      }
+    }
+
+    // draw the grid: squares get smaller for bigger puzzles
+    const size = Math.max(28, Math.min(46, Math.floor(Math.min(540, window.innerWidth - 60) / puzzle.cols)));
+    const grid = $('cwGrid');
+    grid.style.gridTemplateColumns = 'repeat(' + puzzle.cols + ', ' + size + 'px)';
+    grid.style.gridAutoRows = size + 'px';
+    grid.innerHTML = '';
+    for (let r = 0; r < puzzle.rows; r++) for (let c = 0; c < puzzle.cols; c++) {
+      const id = key(r, c), el = document.createElement('div');
+      if (!cells.has(id)) { el.className = 'cw-cell blank'; grid.appendChild(el); continue; }
+      el.className = 'cw-cell';
+      el.style.fontSize = Math.round(size * 0.55) + 'px';
+      const n = puzzle.numOf.get(id);
+      el.innerHTML = (n ? '<span class="cw-num" style="font-size:' + Math.round(size * 0.27) + 'px">' + n + '</span>' : '') + '<span class="cw-l"></span>';
+      el.addEventListener('pointerdown', e => { e.preventDefault(); clickCell(id); });
+      cells.get(id).el = el;
+      grid.appendChild(el);
+    }
+
+    // clue lists
+    for (const dir of ['across', 'down']) {
+      const ol = $(dir === 'across' ? 'cwAcross' : 'cwDown');
+      ol.innerHTML = '';
+      puzzle.words.filter(w => w.dir === dir).forEach(w => {
+        w.li = document.createElement('li');
+        w.li.innerHTML = '<b>' + w.num + '</b>' + clueText(w);
+        w.li.addEventListener('pointerdown', e => { e.preventDefault(); select(puzzle.words.indexOf(w)); });
+        ol.appendChild(w.li);
+      });
+    }
+
+    score = 0; done = 0; running = true;
+    $('cwTotal').textContent = puzzle.words.length;
+    $('cwScore').textContent = 0;
+    $('cwDone').textContent = 0;
+    $('cwMsg').textContent = '';
+    show('cwGame');
+    if (document.activeElement) document.activeElement.blur(); // so typing goes to the puzzle, not a button
+    select(0);
+  }
+
+  const clueText = w => w.clue + (/[^a-z]/i.test(w.word) ? ' (no apostrophe)' : '') + (w.bonus ? ' (bonus word)' : '');
+
+  function stop() {
+    clearTimeout(nextTimer);
+    running = false;
+    show('cwStart');
+  }
+
+  // Choose a word (by its place in the ← → order) and put the cursor in its first empty square
+  function select(i, at) {
+    cur = i;
+    const w = puzzle.words[cur];
+    pos = at !== undefined ? at : Math.max(0, w.cells.findIndex(id => !cells.get(id).letter));
+    render();
+  }
+
+  function clickCell(id) {
+    if (!running) return;
+    const cell = cells.get(id), w = puzzle.words[cur];
+    let pick;
+    if (cell.words.length === 2 && w.cells[pos] === id) pick = cell.words.find(x => x !== w); // same square again: switch direction
+    else pick = cell.words.find(x => x.dir === w.dir) || cell.words[0];
+    select(puzzle.words.indexOf(pick), pick.cells.indexOf(id));
+  }
+
+  function render() {
+    const w = puzzle.words[cur];
+    for (const [id, cell] of cells) {
+      cell.el.querySelector('.cw-l').textContent = cell.letter;
+      cell.el.classList.toggle('in-word', w.cells.includes(id));
+      cell.el.classList.toggle('cur', w.cells[pos] === id && !w.solved);
+      cell.el.classList.toggle('solved', cell.locked);
+    }
+    puzzle.words.forEach(x => {
+      x.li.classList.toggle('active', x === w);
+      x.li.classList.toggle('solved', x.solved);
+    });
+    $('cwClueNum').textContent = w.num + ' ' + (w.dir === 'across' ? 'Across' : 'Down') + ':';
+    $('cwClueText').textContent = clueText(w);
+  }
+
+  function clearWrong() {
+    for (const cell of cells.values()) cell.el.classList.remove('wrong');
+  }
+
+  function typeLetter(ch) {
+    const w = puzzle.words[cur];
+    if (w.solved) return;
+    const open = k => !cells.get(w.cells[k]).locked;
+    if (!open(pos)) pos = w.cells.findIndex((_, k) => k > pos && open(k));
+    if (pos < 0) pos = w.cells.findIndex((_, k) => open(k));
+    const id = w.cells[pos];
+    cells.get(id).letter = ch;
+    clearWrong();
+    $('cwMsg').textContent = '';
+    const next = w.cells.findIndex((_, k) => k > pos && open(k));
+    if (next >= 0) pos = next;
+    cells.get(id).words.forEach(x => check(x, true));
+    render();
+  }
+
+  function backspace() {
+    const w = puzzle.words[cur];
+    if (w.solved) return;
+    clearWrong();
+    const here = cells.get(w.cells[pos]);
+    if (here.letter && !here.locked) { here.letter = ''; render(); return; }
+    for (let k = pos - 1; k >= 0; k--) {
+      const cell = cells.get(w.cells[k]);
+      if (!cell.locked) { cell.letter = ''; pos = k; break; }
+    }
+    render();
+  }
+
+  // When every square of a word is filled, see if it's right.
+  // typed = he just typed into this word; only then does a wrong word count as a try.
+  function check(w, typed) {
+    if (w.solved || w.cells.some(id => !cells.get(id).letter)) return;
+    if (w.cells.map(id => cells.get(id).letter).join('') !== w.answer) {
+      if (!typed) return;
+      w.tries++;
+      w.cells.forEach(id => { const el = cells.get(id).el; el.classList.remove('wrong'); void el.offsetWidth; el.classList.add('wrong'); });
+      $('cwMsg').textContent = 'Not quite. Try again!';
+      return;
+    }
+    w.solved = true;
+    w.cells.forEach(id => { cells.get(id).locked = true; });
+    const pts = POINTS[Math.min(w.tries, POINTS.length - 1)];
+    score += pts; done++;
+    $('cwScore').textContent = score;
+    $('cwDone').textContent = done;
+    $('cwMsg').textContent = '🎉 ' + w.word + ' +' + pts;
+    w.cells.forEach(id => cells.get(id).words.forEach(x => check(x, false))); // a crossing word may now be right too
+    if (done === puzzle.words.length) { nextTimer = setTimeout(finish, 1200); return; }
+    if (w === puzzle.words[cur]) {
+      // move on to the next word that isn't solved yet
+      nextTimer = setTimeout(() => {
+        for (let k = 1; k <= puzzle.words.length; k++) {
+          const i = (cur + k) % puzzle.words.length;
+          if (!puzzle.words[i].solved) { select(i); return; }
+        }
+      }, 700);
+    }
+  }
+
+  function finish() {
+    running = false;
+    show('cwEnd');
+    $('cwFinal').textContent = score;
+    $('cwOutOf').textContent = 'out of ' + (puzzle.words.length * POINTS[0]) + ' possible';
+    const missed = puzzle.words.filter(w => w.tries > 0).map(w => w.word);
+    $('cwMissed').innerHTML = missed.length
+      ? 'Words to practice: <b>' + missed.join(', ') + '</b>'
+      : '⭐ Perfect puzzle! Every word right the first time! ⭐';
+  }
+
+  // ← → go to the previous / next clue: Across in number order, then Down, then around again
+  function moveWord(step) {
+    clearTimeout(nextTimer);
+    const n = puzzle.words.length;
+    select((cur + step + n) % n);
+  }
+
+  window.addEventListener('keydown', e => {
+    if (!running || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); moveWord(e.key === 'ArrowRight' ? 1 : -1); }
+    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); backspace(); }
+    else if (/^[a-z]$/i.test(e.key)) typeLetter(e.key.toLowerCase());
+  });
+
+  const say = text => speak(text.replace(/_+/g, 'blank'));
+  $('cwHearClue').onclick = e => { e.currentTarget.blur(); say(clueText(puzzle.words[cur])); };
+  $('cwHearWord').onclick = e => { e.currentTarget.blur(); speak(puzzle.words[cur].word); };
+  if (!canSpeak) { $('cwHearClue').style.display = 'none'; $('cwHearWord').style.display = 'none'; }
+  $('cwGo').onclick = newGame;
+  $('cwAgain').onclick = newGame;
+  show('cwStart');
+
+  return { stop };
+})();
+
 // ===== Switching between the games =====
 const GAMES = {
   // round = the panel shown while a round is being played
@@ -1312,6 +1764,7 @@ const GAMES = {
   scramble: { tab: 'tabScramble', panel: 'scrambleGame', round: 'scGame', stop: () => scramble.stop() },
   decode:   { tab: 'tabDecode',   panel: 'decodeGame',   round: 'dcGame', stop: () => decoder.stop() },
   blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  round: 'blGame', stop: () => blaster.stop() },
+  crossword: { tab: 'tabCrossword', panel: 'crosswordGame', round: 'cwGame', stop: () => crossword.stop() },
 };
 function showTab(which) {
   for (const [name, g] of Object.entries(GAMES)) {

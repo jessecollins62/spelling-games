@@ -8,8 +8,9 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the four games, tab switching, and the word-list picker. One file, roughly 1,300 lines. |
+| `index.html` | The whole app: styles, the five games, tab switching, and the word-list picker. One file, roughly 1,900 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
+| `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
 | `print.html` | A printable black-and-white "DECODE" worksheet (Code Breaker on paper) for any list, plus a page of cipher keys. |
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
 | `LMB-words-image/` | Photos of the 10 Seeing Stars source pages (Star Words 1–1000). Local only: left out of git by `.gitignore` because they are copyrighted. |
@@ -31,16 +32,18 @@ Each word entry:
 ```js
 { word: "street",
   decoys: ["streat", "streit"],          // Curtain: two fake misspellings (not real words)
-  meaning: "A road in a town ...",       // Blaster: kid-friendly meaning that doesn't use the word
+  meaning: "A road in a town ...",       // Blaster and Crossword: kid-friendly meaning that doesn't use the word
   lookalikes: ["stress", "strait", "streak"] }  // Blaster: real words spelled similarly
 ```
 
-Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; Blaster skips words that don't have them.
+Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; Blaster skips words without both, and Crossword skips words without a `meaning`.
+
+**Meaning rules** (for `words.js` and `meanings.js`): short and kid-friendly, and never containing the word itself. For little words that are hard to define (`the`, `of`), use a fill-in-the-blank sentence with `___` for the word ("Put ___ dog outside."). Don't start a meaning with a digit, since the Crossword clue list puts the clue number right before it.
 
 ### Current lists
 
-1. **Long E list** and **Long A list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all four games.
-2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. Only `word` plus auto-generated `decoys: fd("...")`. They do **not** work in Blaster (no meanings). See `LMB-reference.md`; the next series would start at LMB 101.
+1. **Long E list** and **Long A list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all five games.
+2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
 
@@ -57,8 +60,8 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`). Each game has three panels: start, in-game, and end.
-3. **`words.js`**, then a **shared helpers** script:
+2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`). Each game has three panels: start, in-game, and end.
+3. **`words.js`** and **`meanings.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
    - `shuffle(array)`: returns a shuffled copy.
@@ -135,6 +138,24 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - Drawn on a 900×520 `<canvas>` with a `requestAnimationFrame` loop (`update` + `draw`).
 - Only uses words that have both `meaning` and `lookalikes`. If the list has none, the start screen says so and the game won't start.
 
+### ✏️ Crossword: a puzzle built from the list
+
+- Each Start (or 🔄 New puzzle) builds a new crossword from the list's words. The clues are their `meaning`s. Words need at least two letters, so `I` and `a` are left out. Apostrophes are left out of the grid (`don't` → `dont`), and those clues end with "(no apostrophe)".
+- **Moving around:**
+  - **Click/tap a square** to pick the word going through it. A square used by two words keeps the current direction; clicking the same square again switches to the other word. Clicking a clue in the list picks that word.
+  - **→ / ←** go to the next / previous clue: all Across clues in number order, then all Down clues in number order, then back around to the first Across. (↑/↓ do nothing during a puzzle.)
+  - **Type** letters to fill the current word; the cursor moves forward and skips squares already solved. **Backspace/Delete** clears the current square, or the one before it.
+- When all of a word's squares are filled, it's checked. Right: it turns green, locks, and scores. Then the game moves to the next unsolved clue. Wrong: it flashes red and counts a try. A crossing word that becomes right because of locked letters is credited without a try being counted.
+- Scoring: **1000 / 500 / 250** by wrong tries before getting the word. End screen: score out of the maximum, and "Words to practice" (any word that had a wrong try).
+- The clue bar shows the current clue, with **🔊 Clue** (reads it aloud, saying "blank" for `___`) and **🔊 Word** (says the answer word).
+- **How the puzzle is built** (`build`, `layout`, `fits`, `spots`):
+  - Words are placed one at a time, each crossing a word already in the grid. A new letter may not touch a parallel word (`fits`), so every run of letters in the grid is exactly one word.
+  - Each try **starts from a random word in the list**, then goes longest-first with some shuffling. 300 tries (`ATTEMPTS`) are made, half of them choosing spots more randomly, and the best is kept: fewest separate groups, then fewest bonus words, then the smallest grid.
+  - **Bonus words:** if some words can't cross anything (common with very short words like `of` and `up`), 80 more tries (`BONUS_ATTEMPTS`) may add bonus words from other lists. Candidates come from the same series first (LMB with LMB), nearest **earlier** lists first, then later ones, then other series. Only meanings-having, letters-only words of 3–6 letters are used. The 60 nearest candidates (`BONUS_LOOK`) are compared, and the one that frees up the most stuck words is used. Bonus clues end with "(bonus word)" and score like any other word.
+  - If even that fails, a word starts a separate small group one empty row or column away. In testing, every list connected into one puzzle; about 13 of 102 lists use bonus words, and the 2–3 letter lists (LMB 1–4) need several.
+  - Building takes about 20 ms per puzzle.
+- Squares are 28–46 px depending on puzzle size; the clue lists sit beside the grid on wide screens and below it on narrow ones.
+
 ## Printable worksheet (`print.html`)
 
 - Title "DECODE". Pick a list, then **Shuffle again** or **Print**.
@@ -150,11 +171,12 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - **Word Scramble with apostrophes**: 14 LMB words have one (`don't`, `I'll`, ...). The `'` tile can be dragged or tapped, but not typed. (Code Breaker and the worksheet fill it in for you; Scramble could do the same.)
 - **High scores reset on reload** (in memory only).
 - **`fd()` decoys are weak** for very short words and sometimes make real words.
-- **Blaster doesn't work with LMB lists** (no meanings or lookalikes).
+- **Blaster doesn't work with LMB lists** (they have meanings now, but no lookalikes).
+- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet.
 - **Cipher code is duplicated** between `index.html` and `print.html`.
 
 ## Adding a word list
 
 1. Add a `{ name, words: [...] }` entry to `WORD_LISTS` in `words.js`. To make it the default for browsers with nothing saved, change `DEFAULT_LIST` in `index.html`.
-2. For all four games, give each word `decoys`, `meaning`, and `lookalikes`. For a quick list, use `decoys: fd("word")` and skip the rest (Blaster won't be available).
+2. For all five games, give each word `decoys`, `meaning`, and `lookalikes`. For a quick list, use `decoys: fd("word")` and put meanings in `meanings.js` (Crossword then works; Blaster won't be available without lookalikes).
 3. Reload `index.html`; the new list appears in the picker.
