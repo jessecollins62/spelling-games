@@ -108,7 +108,8 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 
 ### 🔐 Code Breaker: decode a secret word
 
-- Each word is written in one cipher, picked at random per word:
+- The start screen has a row of code buttons (`#dcCodes`): **🎲 Mix of all codes** (the default) or one single code. In Mix, each word gets a random cipher. With a single code, every word uses that one. The buttons are built from the `CIPHERS` table, so a new cipher gets a button automatically. The choice (`code`) is kept across restarts, tab switches, and list changes, and resets on reload.
+- The ciphers:
   - **Morse code**: dots and dashes.
   - **Pigpen cipher**: grid and X shapes, with dots for the second half (SVG).
   - **Phone cipher**: keypad digit plus an arrow for which letter on that key (↙ ↓ ↘ ⇓ = 1st–4th).

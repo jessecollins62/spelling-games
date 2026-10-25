@@ -97,6 +97,10 @@
 
   /* decoder */
   #dcStart, #dcGame, #dcEnd { width: 100%; text-align: center; }
+  /* Code Breaker: which code to play with */
+  .choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 4px 0 22px; }
+  .choices button { font-size: 1.15rem; padding: 9px 20px; background: #6b4bb5; color: #fff; box-shadow: 0 5px 0 #3a2370; }
+  .choices button.active { background: #ffd84a; color: #3a2400; box-shadow: 0 5px 0 #b88f00; }
   #dcGame, #dcEnd { display: none; }
   #dcEnd .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
   #dcPuzzle { display: flex; flex-wrap: wrap; gap: 14px 12px; justify-content: center; margin: 10px 0; }
@@ -231,8 +235,9 @@
   <div id="decodeGame" class="mode" style="display:none">
     <div id="dcStart">
       <p style="font-size:1.4rem">Crack the secret code to find the word!<br>
-        Each word is hidden in Morse code, pigpen symbols, or a phone-keypad code.<br>
+        Pick a code, or mix them all up.<br>
         Use the key to decode each letter, then type the word. 1000 pts for every word!</p>
+      <div id="dcCodes" class="choices"></div>
       <button id="dcGo">Start!</button>
     </div>
 
@@ -839,6 +844,20 @@ const decoder = (function () {
     },
   };
 
+  // --- Choosing the code: 'mix' (a random code for each word) or one key of CIPHERS ---
+  let code = 'mix'; // kept across restarts and tab switches; resets on reload
+  [['mix', '🎲 Mix of all codes'], ...Object.entries(CIPHERS).map(([k, c]) => [k, c.name])].forEach(([k, label]) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.dataset.code = k;
+    b.onclick = () => {
+      code = k;
+      document.querySelectorAll('#dcCodes button').forEach(x => x.classList.toggle('active', x.dataset.code === code));
+    };
+    $('dcCodes').appendChild(b);
+  });
+  $('dcCodes').firstChild.classList.add('active');
+
   // --- Game ---
   let words, idx, score, current, answer, given, locked = false, running = false, advance = null, nextTimer;
 
@@ -870,7 +889,7 @@ const decoder = (function () {
     $('dcMsg').textContent = '';
     $('dcPuzzle').className = '';
 
-    const names = Object.keys(CIPHERS);
+    const names = code === 'mix' ? Object.keys(CIPHERS) : [code];
     const cipher = CIPHERS[names[Math.floor(Math.random() * names.length)]];
     $('dcCipher').innerHTML = 'Secret code: <b>' + cipher.name + '</b>';
     $('dcKeyLabel').textContent = 'Key: ' + cipher.name;
