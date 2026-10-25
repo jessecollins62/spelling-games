@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DECODE</title>
+<style>
+  @page { size: letter; margin: 0.4in; }
+  * { box-sizing: border-box; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: "Trebuchet MS", "Segoe UI", sans-serif; color: #000; background: #fff; margin: 0; padding: 0.3in; }
+  h1 { font-size: 24pt; margin: 0 0 8pt; text-align: center; letter-spacing: 4px; }
+  .controls { margin-bottom: 14pt; font-size: 12pt; text-align: center; }
+  .controls button, .controls select { font-size: 12pt; padding: 4px 10px; margin-right: 8px; }
+  /* all 20 words on one page: two columns of ten */
+  #rows { display: grid; grid-template-rows: repeat(10, auto); grid-auto-flow: column; grid-auto-columns: 1fr; column-gap: 14pt; row-gap: 3pt; }
+  .row { display: flex; align-items: flex-end; gap: 2pt; padding: 2pt 0 4pt; border-bottom: 1px solid #999; }
+  .num { width: 18pt; font-size: 11pt; font-weight: bold; padding-bottom: 6pt; flex: none; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 3pt; width: 34pt; flex: none; }
+  .dc-sym { width: 100%; height: 30pt; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .dc-sym svg { width: 24pt; height: 24pt; }
+  .dc-sym svg.msvg { height: 4pt; }
+  .ans { width: 28pt; height: 24pt; border-bottom: 1.5px solid #000; }
+  /* apostrophes are printed in for you: no code symbol, no blank */
+  .col.given { width: 10pt; }
+  .col.given .ans { width: 10pt; border-bottom: none; display: flex; align-items: flex-end; justify-content: center; font-size: 20pt; font-weight: bold; line-height: 1; }
+  .morse { display: flex; align-items: center; gap: 1.5pt; }
+  .mdot { width: 3.5pt; height: 3.5pt; border-radius: 50%; background: #000; }
+  .mdash { width: 7pt; height: 3.5pt; border-radius: 2pt; background: #000; }
+  .ph-d { font-size: 13pt; font-weight: bold; line-height: 1; }
+  .ph-a { font-size: 11pt; font-weight: bold; line-height: 1; }
+  .at-l { font-size: 18pt; font-weight: bold; line-height: 1; }
+  .keys { break-before: page; }
+  .keys h1 { margin-bottom: 4pt; }
+  .keys h2 { font-size: 14pt; margin: 8pt 0 4pt; }
+  .keys section { break-inside: avoid; }
+  .keys .chart { width: 100%; height: auto; max-width: 5.5in !important; }
+  .keys .kcol { max-width: 2.2in; }
+  .keywrap { display: flex; flex-wrap: wrap; gap: 5pt; }
+  .kitem { border: 1px solid #000; border-radius: 4pt; padding: 3pt 6pt; min-width: 48pt; display: flex; flex-direction: column; align-items: center; font-weight: bold; }
+  .kitem .kl { font-size: 12pt; }
+  .kitem .kc { font-size: 11pt; letter-spacing: 1px; }
+  .atkey { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3pt; }
+  .atkey .kitem { min-width: 0; padding: 5pt 0; font-size: 13pt; }
+  .atkey .kitem.low { background: #fff; }
+  .note { font-size: 10pt; }
+  @media print { .controls { display: none; } body { padding: 0; } }
+</style>
+</head>
+<body>
+<h1>DECODE</h1>
+<div class="controls">
+  <label>Word list: <select id="listPick"></select></label>
+  <button id="again">Shuffle again</button>
+  <button onclick="window.print()">Print</button>
+</div>
+<div id="rows"></div>
+<div class="keys" id="keys"></div>
+
+<script src="words.js"></script>
+<script>
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+const shuffle = a => {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// ----- Ciphers: copied from index.html (Code Breaker game) -----
+// --- Morse ---
+const MORSE = {
+  a: '.-', b: '-...', c: '-.-.', d: '-..', e: '.', f: '..-.', g: '--.', h: '....', i: '..', j: '.---',
+  k: '-.-', l: '.-..', m: '--', n: '-.', o: '---', p: '.--.', q: '--.-', r: '.-.', s: '...', t: '-',
+  u: '..-', v: '...-', w: '.--', x: '-..-', y: '-.--', z: '--..',
+};
+const morseHtml = ch => '<div class="morse">' +
+  [...MORSE[ch]].map(m => '<span class="' + (m === '.' ? 'mdot' : 'mdash') + '"></span>').join('') + '</div>';
+
+// --- Pigpen: a-i = # grid, j-r = # grid with dot, s-v = X grid, w-z = X grid with dot ---
+const WEDGES = [ // top, left, right, bottom: S T U V (W X Y Z with a dot)
+  { pts: '7,7 20,20 33,7',   dot: [20, 11] },
+  { pts: '7,7 20,20 7,33',   dot: [11, 20] },
+  { pts: '33,7 20,20 33,33', dot: [29, 20] },
+  { pts: '7,33 20,20 33,33', dot: [20, 29] },
+];
+function pigpenSvg(ch, size) {
+  const i = ALPHABET.indexOf(ch);
+  let body = '', dot = null;
+  if (i < 18) {
+    const g = i % 9, r = Math.floor(g / 3), c = g % 3;
+    const line = (x1, y1, x2, y2) => '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+    if (r > 0) body += line(9, 9, 31, 9);
+    if (r < 2) body += line(9, 31, 31, 31);
+    if (c > 0) body += line(9, 9, 9, 31);
+    if (c < 2) body += line(31, 9, 31, 31);
+    if (i >= 9) dot = [20, 20];
+  } else {
+    const k = i - 18, w = WEDGES[k % 4];
+    body = '<polyline points="' + w.pts + '"/>';
+    if (k >= 4) dot = w.dot;
+  }
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 40 40" fill="none" stroke="#3a2400" ' +
+    'stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">' + body +
+    (dot ? '<circle cx="' + dot[0] + '" cy="' + dot[1] + '" r="2.8" fill="#3a2400" stroke="none"/>' : '') + '</svg>';
+}
+
+
+// The traditional pigpen chart: two # grids and two X shapes, as one picture
+function pigpenChartSvg() {
+  const S = 150, C = S / 3, GAP = 34, PAD = 14, INK = '#3a2400';
+  const W = PAD * 2 + 4 * S + 3 * GAP, H = PAD * 2 + S;
+  let lines = '', marks = '';
+  const letter = (ch, x, y) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" ' +
+    'font-size="26" font-weight="bold" fill="' + INK + '" stroke="none">' + ch.toUpperCase() + '</text>';
+  const dot = (x, y) => '<circle cx="' + x + '" cy="' + y + '" r="4.2" fill="' + INK + '" stroke="none"/>';
+  for (let f = 0; f < 4; f++) {
+    const ox = PAD + f * (S + GAP), oy = PAD, dotted = f % 2 === 1;
+    if (f < 2) {
+      lines += '<path d="M' + (ox + C) + ' ' + oy + 'V' + (oy + S) + 'M' + (ox + 2 * C) + ' ' + oy + 'V' + (oy + S) +
+        'M' + ox + ' ' + (oy + C) + 'H' + (ox + S) + 'M' + ox + ' ' + (oy + 2 * C) + 'H' + (ox + S) + '"/>';
+      for (let g = 0; g < 9; g++) {
+        const cx = ox + C * (g % 3) + C / 2, cy = oy + C * Math.floor(g / 3) + C / 2;
+        marks += letter(ALPHABET[f * 9 + g], cx, dotted ? cy - 6 : cy);
+        if (dotted) marks += dot(cx, cy + 14);
+      }
+    } else {
+      lines += '<path d="M' + ox + ' ' + oy + 'L' + (ox + S) + ' ' + (oy + S) + 'M' + (ox + S) + ' ' + oy + 'L' + ox + ' ' + (oy + S) + '"/>';
+      const mx = ox + S / 2, my = oy + S / 2;
+      const spots = [[mx, oy + 30, 0, 17], [ox + 30, my, 17, 0], [ox + S - 30, my, -17, 0], [mx, oy + S - 30, 0, -17]]; // top, left, right, bottom
+      spots.forEach(([x, y, dx, dy], k) => {
+        marks += letter(ALPHABET[18 + (f - 2) * 4 + k], x, y);
+        if (dotted) marks += dot(x + dx, y + dy);
+      });
+    }
+  }
+  return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:760px;height:auto">' +
+    '<rect width="' + W + '" height="' + H + '" rx="14" fill="#fff3c4"/>' +
+    '<g fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round">' + lines + '</g>' + marks + '</svg>';
+}
+
+// A phone keypad picture; each key shows its number big on top and its letters small across the bottom
+function keypadSvg() {
+  const KW = 96, KH = 86, G = 6, PAD = 12;
+  const W = PAD * 2 + 3 * KW + 2 * G, H = PAD * 2 + 4 * KH + 3 * G;
+  const letters = {};
+  PHONE.forEach(([d, ls]) => { letters[d] = ls; });
+  const rows = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['*', '0', '#']];
+  const text = (t, x, y, size, fill) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" ' +
+    'font-size="' + size + '" font-weight="bold" fill="' + fill + '">' + t + '</text>';
+  let out = '<rect width="' + W + '" height="' + H + '" rx="24" fill="#3b2478"/>';
+  rows.forEach((row, r) => row.forEach((d, c) => {
+    const x = PAD + c * (KW + G), y = PAD + r * (KH + G), cx = x + KW / 2;
+    out += '<rect x="' + x + '" y="' + y + '" width="' + KW + '" height="' + KH + '" rx="14" fill="#fff3c4"/>';
+    out += text(d, cx, y + 31, 40, '#3a2400');
+    const ls = letters[d];
+    if (ls) {
+      const step = ls.length === 4 ? 22 : 26; // spread the letters evenly across the bottom
+      [...ls].forEach((ch, i) => {
+        out += text(ch.toUpperCase(), cx + (i - (ls.length - 1) / 2) * step, y + KH - 17, 17, '#3a2400');
+      });
+    }
+  }));
+  return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:320px;height:auto">' + out + '</svg>' +
+    '<div style="width:100%; opacity:.85">The arrow tells you which letter under the number: ' + DIRS[0] + ' first, ' + DIRS[1] + ' second, ' +
+    DIRS[2] + ' third, ' + DIRS[3] + ' fourth.</div>';
+}
+
+
+// Atbash key: A-M on top, Z-N underneath, so each column is a pair that swaps
+function atbashKey() {
+  const top = [...ALPHABET].slice(0, 13), low = [...ALPHABET].slice(13).reverse();
+  const cell = (ch, cls) => '<div class="kitem ' + cls + '"><span class="kl">' + ch.toUpperCase() + '</span></div>';
+  return '<div class="atkey">' + top.map(c => cell(c, 'up')).join('') + low.map(c => cell(c, 'low')).join('') + '</div>';
+}
+
+// --- Phone keypad: the arrow says which letter under the number (down-left, down, down-right, double-down = 1st..4th) ---
+const PHONE = [['2', 'abc'], ['3', 'def'], ['4', 'ghi'], ['5', 'jkl'], ['6', 'mno'], ['7', 'pqrs'], ['8', 'tuv'], ['9', 'wxyz']];
+const DIRS = ['↙', '↓', '↘', '⇓'];
+const phoneOf = {};
+PHONE.forEach(([d, ls]) => [...ls].forEach((ch, i) => { phoneOf[ch] = { digit: d, dir: DIRS[i] }; }));
+
+const CIPHERS = {
+  morse: {
+    name: 'Morse code',
+    symbol: morseHtml,
+    key: () => [...ALPHABET].map(ch =>
+      '<div class="kitem"><span class="kl">' + ch + '</span><span class="kc">' + MORSE[ch].replace(/\./g, '•').replace(/-/g, '–') + '</span></div>').join(''),
+  },
+  pigpen: {
+    name: 'Pigpen cipher',
+    symbol: ch => pigpenSvg(ch, 64),
+    key: pigpenChartSvg,
+  },
+  phone: {
+    name: 'Phone cipher',
+    symbol: ch => '<div class="ph-d">' + phoneOf[ch].digit + '</div><div class="ph-a">' + phoneOf[ch].dir + '</div>',
+    key: keypadSvg,
+  },
+  atbash: {
+    name: 'Atbash cipher',
+    symbol: ch => '<div class="at-l">' + ALPHABET[25 - ALPHABET.indexOf(ch)].toUpperCase() + '</div>',
+    key: atbashKey,
+  },
+};
+
+// ----- Page -----
+// The printout is black and white only: no colored fills, just outlines
+const bw = svg => svg
+  .replace(/fill="#(3b2478|fff3c4)"/g, 'fill="#fff" stroke="#000" stroke-width="2"')
+  .replace(/#3a2400/g, '#000');
+// Morse marks are drawn as SVG so they print even when the browser leaves out background colors
+CIPHERS.morse.symbol = ch => {
+  let x = 0, body = '';
+  [...MORSE[ch]].forEach(m => {
+    const w = m === '.' ? 3.5 : 7;
+    body += m === '.' ? '<circle cx="' + (x + 1.75) + '" cy="2" r="1.75"/>'
+                      : '<rect x="' + x + '" y="0.25" width="7" height="3.5" rx="1.75"/>';
+    x += w + 1.5;
+  });
+  return '<svg class="msvg" viewBox="0 0 ' + (x - 1.5) + ' 4" style="width:' + (x - 1.5) + 'pt;height:4pt" fill="#000">' + body + '</svg>';
+};
+const NAMES = Object.keys(CIPHERS);
+function build() {
+  const list = WORD_LISTS[$('listPick').value];
+  // every cipher gets used about equally, in random order
+  const words = shuffle(list.words.map(w => w.word.toLowerCase()));
+  const kinds = shuffle(words.map((_, i) => NAMES[i % NAMES.length]));
+  $('rows').innerHTML = words.map((w, n) => {
+    const c = CIPHERS[kinds[n]];
+    return '<div class="row"><div class="num">' + (n + 1) + '.</div>' +
+      [...w].map(ch => ALPHABET.includes(ch)
+        ? '<div class="col"><div class="dc-sym">' + bw(c.symbol(ch)) + '</div><div class="ans"></div></div>'
+        : '<div class="col given"><div class="dc-sym"></div><div class="ans">' + ch + '</div></div>' // e.g. the ' in "don't"
+      ).join('') + '</div>';
+  }).join('');
+  const used = NAMES.filter(k => kinds.includes(k));
+  $('keys').innerHTML = '<h1>KEYS</h1>' + used.map(k => {
+    const c = CIPHERS[k];
+    const body = k === 'morse' ? '<div class="keywrap">' + c.key() + '</div>' : bw(c.key());
+    return '<section class="' + (k === 'phone' ? 'kcol' : '') + '"><h2>' + c.name + '</h2>' + body + '</section>';
+  }).join('');
+}
+const $ = id => document.getElementById(id);
+WORD_LISTS.forEach((l, i) => $('listPick').add(new Option(l.name, i)));
+$('listPick').onchange = build;
+$('again').onclick = build;
+build();
+</script>
+</body>
+</html>

@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spelling Game Show</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: "Trebuchet MS", system-ui, sans-serif;
+    background: radial-gradient(circle at top, #4b2a8c, #1c0f3d 70%); color: #fff;
+    display: flex; flex-direction: column; align-items: center; padding: 20px;
+  }
+  h1 { margin: 0 0 6px; font-size: 2.2rem; text-shadow: 0 3px 0 #0006; }
+  .hud { display: flex; gap: 30px; justify-content: center; font-size: 1.4rem; margin-bottom: 10px; }
+  .hud b { color: #ffd84a; }
+  .panel { text-align: center; max-width: 900px; width: 100%; }
+  button {
+    font: inherit; font-size: 1.4rem; font-weight: bold; padding: 12px 28px; border: 0;
+    border-radius: 14px; cursor: pointer; background: #ffd84a; color: #3a2400;
+    box-shadow: 0 5px 0 #b88f00;
+  }
+  button:active { transform: translateY(3px); box-shadow: 0 2px 0 #b88f00; }
+  #hear { margin: 6px 0 4px; font-size: 1.6rem; }
+  #prompt { font-size: 1.3rem; margin-bottom: 14px; min-height: 1.6em; }
+  #stage { display: flex; gap: 24px; justify-content: center; margin: 10px 0 20px; }
+  .window {
+    position: relative; width: 250px; height: 300px; border: 10px solid #c9922b;
+    border-radius: 8px; background: #fff3c4; overflow: hidden; box-shadow: 0 8px 0 #0005;
+    touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .prize {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; color: #3a2400; font-weight: bold;
+  }
+  .prize .big { font-size: 5.5rem; line-height: 1; }
+  .prize .txt { font-size: 1.8rem; margin-top: 8px; }
+  .prize .scene { font-size: 3rem; line-height: 1.1; margin-top: 4px; animation: bounce 0.6s 0.4s 3; }
+  .prize .cap { font-size: 1.2rem; }
+  .prize:has(.scene) .big { font-size: 4rem; }
+  @keyframes bounce { 50% { transform: translateY(-14px); } }
+  .curtain {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 2.1rem; font-weight: bold; cursor: pointer; text-shadow: 0 2px 0 #0008;
+    background: repeating-linear-gradient(90deg, #b3122b 0 22px, #8f0c20 22px 44px);
+    border-bottom: 8px solid #ffd84a;
+    transition: transform 0.5s cubic-bezier(.6,-0.1,.3,1);
+  }
+  @media (hover: hover) { .curtain:hover { filter: brightness(1.2); } }
+  .window.open .curtain { transform: translateY(-105%); cursor: default; }
+  .window.locked .curtain { cursor: default; }
+  .window.good { animation: pop 0.6s 0.5s; }
+  @keyframes pop { 50% { transform: scale(1.08); } }
+  #msg { font-size: 1.6rem; min-height: 2em; }
+  #end { display: none; }
+  #end .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
+  #missed { font-size: 1.3rem; margin: 10px 0 20px; line-height: 1.6; }
+
+  /* mode tabs */
+  #listBar { margin: -6px 0 14px; font-size: 1.1rem; color: #fff; }
+  #listPick { font-size: 1.1rem; padding: 4px 8px; border-radius: 8px; margin-left: 6px; }
+  #tabs { flex-wrap: wrap; justify-content: center; display: flex; gap: 14px; margin: 8px 0 16px; }
+  #tabs button { font-size: 1.2rem; padding: 10px 22px; background: #6b4bb5; color: #fff; box-shadow: 0 5px 0 #3a2370; }
+  #tabs button.active { background: #ffd84a; color: #3a2400; box-shadow: 0 5px 0 #b88f00; }
+  .mode { width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; }
+
+  /* word scramble */
+  #scStart, #scGame, #scEnd { width: 100%; text-align: center; }
+  #scGame, #scEnd { display: none; }
+  #scEnd .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
+  .tray {
+    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+    padding: 18px 14px; margin: 6px 0; border-radius: 18px; background: rgba(0,0,0,.25);
+  }
+  .tray-label { font-size: 1.1rem; opacity: .8; margin-top: 12px; }
+  .cell, .slot {
+    width: 70px; height: 70px; border-radius: 12px; border: 3px dashed rgba(255,255,255,.25);
+  }
+  .slot { border-color: #ffd84a; background: rgba(255,216,74,.08); }
+  .tile {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-size: 2.6rem; font-weight: bold; color: #3a2400; user-select: none; cursor: grab;
+    background: linear-gradient(#fff6d0, #ffe08a); border-radius: 9px; box-shadow: 0 5px 0 #b88f00;
+    touch-action: none;
+  }
+  .tile.dragging {
+    position: fixed; z-index: 1000; cursor: grabbing; transform: scale(1.12) rotate(-3deg);
+    box-shadow: 0 14px 22px #0007;
+  }
+  #scSlots.wrong { animation: shake 0.4s; }
+  #scSlots.wrong .slot { border-color: #ff6b6b; }
+  #scSlots.good .slot { border-color: #5be37d; background: rgba(91,227,125,.2); }
+  #scSlots.good .tile { background: linear-gradient(#d6ffe0, #8ff0a8); box-shadow: 0 5px 0 #2f9e4f; }
+  @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+  #scMsg { font-size: 1.6rem; min-height: 2em; margin-top: 12px; }
+  #scHear { margin: 0 8px; font-size: 1.3rem; }
+  #scReset { font-size: 1.3rem; background: #8ec5ff; box-shadow: 0 5px 0 #3f7fc0; }
+
+  /* decoder */
+  #dcStart, #dcGame, #dcEnd { width: 100%; text-align: center; }
+  #dcGame, #dcEnd { display: none; }
+  #dcEnd .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
+  #dcPuzzle { display: flex; flex-wrap: wrap; gap: 14px 12px; justify-content: center; margin: 10px 0; }
+  .dc-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .dc-sym {
+    min-width: 92px; height: 100px; padding: 4px 8px; border-radius: 12px; background: #fff3c4; color: #3a2400;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 5px 0 #b88f00;
+  }
+  .dc-ans {
+    width: 66px; height: 66px; border: 3px dashed #ffd84a; border-radius: 12px; background: rgba(255,216,74,.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; font-weight: bold; cursor: pointer; user-select: none;
+  }
+  .dc-ans.filled { border-style: solid; background: #fff6d0; color: #3a2400; }
+  .dc-ans.next { border-color: #fff; box-shadow: 0 0 0 4px rgba(255,216,74,.5); }
+  #dcPuzzle.wrong { animation: shake 0.4s; }
+  #dcPuzzle.wrong .dc-ans { border-color: #ff6b6b; }
+  #dcPuzzle.good .dc-ans { border-color: #5be37d; background: #bff5cb; }
+  /* apostrophes are filled in for you: no code symbol, no box */
+  .dc-col.given .dc-sym { visibility: hidden; min-width: 0; width: 12px; padding: 0; }
+  #dcPuzzle .dc-col.given .dc-ans { width: 20px; border: none; background: none; box-shadow: none; cursor: default; }
+  #dcCipher { font-size: 1.4rem; margin: 4px 0; }
+  #dcCipher b { color: #ffd84a; }
+  #dcMsg { font-size: 1.6rem; min-height: 2em; margin-top: 8px; }
+  .morse { display: flex; align-items: center; gap: 6px; }
+  .mdot { width: 13px; height: 13px; border-radius: 50%; background: #3a2400; }
+  .mdash { width: 26px; height: 11px; border-radius: 6px; background: #3a2400; }
+  .ph-d { font-size: 2.6rem; font-weight: bold; line-height: 1; }
+  .ph-a { font-size: 2.2rem; font-weight: bold; line-height: 1; color: #b3122b; }
+  .at-l { font-size: 3rem; font-weight: bold; line-height: 1; }
+  .atkey { display: grid; grid-template-columns: repeat(13, 1fr); gap: 6px; width: 100%; }
+  .atkey .kitem { min-width: 0; padding: 8px 0; }
+  .atkey .kitem.low { background: #ffe08a; }
+  .key { gap: 8px; }
+  .kitem {
+    background: #fff3c4; color: #3a2400; border-radius: 10px; padding: 6px 8px; min-width: 58px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: bold;
+  }
+  .kitem .kl { font-size: 1.3rem; }
+  .kitem .kc { font-size: 0.95rem; }
+  /* blaster */
+  #blasterGame { width: 100%; max-width: 900px; }
+  #blasterGame.mode > div { width: 100%; text-align: center; }
+  #blGame, #blEnd { display: none; }
+  #blEnd .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
+  #blMeaning {
+    font-size: 1.5rem; line-height: 1.35; padding: 10px 16px; margin: 4px 0 10px; border-radius: 14px;
+    background: #0004; border: 2px solid #ffd84a55;
+  }
+  #blMeaning small { display: block; font-size: 1rem; color: #ffd84a; letter-spacing: 1px; text-transform: uppercase; }
+  #blCanvas { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 8px 0 #0005; cursor: crosshair; touch-action: none; display: block; }
+  #blMsg { font-size: 1.5rem; min-height: 2em; margin-top: 8px; }
+  #blRead { font-size: 1.1rem; padding: 6px 16px; margin-left: 12px; vertical-align: middle; }
+</style>
+</head>
+<body>
+  <h1>🎭 Spelling Game Show 🎭</h1>
+
+  <div id="tabs">
+    <button id="tabCurtain" class="active">🎭 Curtain Game</button>
+    <button id="tabScramble">🔤 Word Scramble</button>
+    <button id="tabDecode">🔐 Code Breaker</button>
+    <button id="tabBlaster">☄️ Blaster</button>
+  </div>
+  <div id="listBar"><label>Word list: <select id="listPick"></select></label></div>
+
+  <div id="curtainGame" class="mode">
+  <div id="start" class="panel">
+    <p style="font-size:1.4rem">Listen to the word, then pick the curtain with the right spelling!<br>
+      1st try = 1000 pts, 2nd try = 500 pts, 3rd try = 250 pts.</p>
+    <button id="go">Start!</button>
+  </div>
+
+  <div id="game" class="panel" style="display:none">
+    <div class="hud">
+      <div>Word <b id="num">1</b> / <b id="total">20</b></div>
+      <div>Score <b id="score">0</b></div>
+    </div>
+    <button id="hear">🔊 Hear the word</button>
+    <div id="prompt"></div>
+    <div id="stage"></div>
+    <div id="msg"></div>
+  </div>
+
+  <div id="end" class="panel">
+    <h2>Game over!</h2>
+    <div class="score"><span id="final">0</span> pts</div>
+    <div id="outof"></div>
+    <div id="best" style="font-size:1.5rem; margin-top:8px"></div>
+    <div id="missed"></div>
+    <button id="again">🔄 Restart</button>
+  </div>
+  </div>
+
+  <div id="scrambleGame" class="mode" style="display:none">
+    <div id="scStart">
+      <p style="font-size:1.4rem">Unscramble the letters to spell the word!<br>
+        Type the letters, or drag them into the boxes. Delete takes a letter back.<br>
+        1000 pts for every word. Try to be fast!</p>
+      <div id="scStartBest" style="font-size:1.4rem; margin-bottom:14px"></div>
+      <button id="scGo">Start!</button>
+    </div>
+
+    <div id="scGame">
+      <div class="hud">
+        <div>Word <b id="scNum">1</b> / <b id="scTotal">10</b></div>
+        <div>Score <b id="scScore">0</b></div>
+        <div>Time <b id="scTime">0.0s</b></div>
+        <div>Best <b id="scBestHud">--</b></div>
+      </div>
+      <div>
+        <button id="scHear">🔊 Hear the word</button>
+        <button id="scReset">🔄 Reset</button>
+      </div>
+      <div class="tray-label">Scrambled letters</div>
+      <div id="scPool" class="tray"></div>
+      <div class="tray-label">Spell the word here</div>
+      <div id="scSlots" class="tray"></div>
+      <div id="scMsg"></div>
+    </div>
+
+    <div id="scEnd">
+      <h2>All done!</h2>
+      <div class="score"><span id="scFinal">0</span> pts</div>
+      <div style="font-size:1.6rem">Your time: <b id="scFinalTime"></b></div>
+      <div id="scBestMsg" style="font-size:1.5rem; margin: 8px 0 20px"></div>
+      <button id="scAgain">🔄 Restart</button>
+    </div>
+  </div>
+
+  <div id="decodeGame" class="mode" style="display:none">
+    <div id="dcStart">
+      <p style="font-size:1.4rem">Crack the secret code to find the word!<br>
+        Each word is hidden in Morse code, pigpen symbols, or a phone-keypad code.<br>
+        Use the key to decode each letter, then type the word. 1000 pts for every word!</p>
+      <button id="dcGo">Start!</button>
+    </div>
+
+    <div id="dcGame">
+      <div class="hud">
+        <div>Word <b id="dcNum">1</b> / <b id="dcTotal">20</b></div>
+        <div>Score <b id="dcScore">0</b></div>
+      </div>
+      <div id="dcCipher"></div>
+      <div id="dcPuzzle"></div>
+      <div id="dcMsg"></div>
+      <div class="tray-label" id="dcKeyLabel">Key</div>
+      <div id="dcKey" class="tray key"></div>
+    </div>
+
+    <div id="dcEnd">
+      <h2>Code cracked!</h2>
+      <div class="score"><span id="dcFinal">0</span> pts</div>
+      <div id="dcOutOf" style="font-size:1.3rem; margin-bottom:20px"></div>
+      <button id="dcAgain">🔄 Restart</button>
+    </div>
+  </div>
+
+  <div id="blasterGame" class="mode" style="display:none">
+    <div id="blStart">
+      <p style="font-size:1.4rem">Asteroids are drifting down, each with a word on it!<br>
+        Read the meaning at the top, then blast the asteroid with the <b>right word</b>.<br>
+        Move the mouse (or use ← →) to aim, and click (or press Space) to fire.<br>
+        Wrong words won't break. 1000 pts for a first-try blast!</p>
+      <div id="blNone" style="color:#ff9b9b; margin-bottom:12px"></div>
+      <button id="blGo">Start!</button>
+    </div>
+
+    <div id="blGame">
+      <div class="hud">
+        <div>Word <b id="blNum">1</b> / <b id="blTotal">20</b></div>
+        <div>Score <b id="blScore">0</b></div>
+      </div>
+      <div id="blMeaning"></div>
+      <canvas id="blCanvas" width="900" height="520"></canvas>
+      <div id="blMsg"></div>
+    </div>
+
+    <div id="blEnd">
+      <h2>Sector cleared!</h2>
+      <div class="score"><span id="blFinal">0</span> pts</div>
+      <div id="blOutOf" style="font-size:1.3rem; margin-bottom:8px"></div>
+      <div id="blBest" style="font-size:1.4rem; margin-bottom:8px"></div>
+      <div id="blMissed" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
+      <button id="blAgain">🔄 Restart</button>
+    </div>
+  </div>
+
+<script src="words.js"></script>
+<script>
+// Helpers shared by all the games
+const $ = id => document.getElementById(id);
+let WORDS = WORD_LISTS[0].words; // the list the games use; the first list in words.js is the default
+const shuffle = a => {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+const canSpeak = 'speechSynthesis' in window;
+function speak(word) {
+  if (!canSpeak) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.rate = 0.85;
+  speechSynthesis.speak(u);
+}
+</script>
+<script>
+// ===== Curtain game =====
+const curtain = (function () {
+  const POINTS = [1000, 500, 250];
+  // Bonus pictures for a first-try answer: a cute animal doing something fun
+  const SCENES = [
+    { pic: '🐶🍦', cap: 'Yum, ice cream!' },
+    { pic: '🐱🍦', cap: 'Yum, ice cream!' },
+    { pic: '🐼🍔', cap: 'Yum, a hamburger!' },
+    { pic: '🐷🍔', cap: 'Yum, a hamburger!' },
+    { pic: '🐰⬆️', cap: 'Boing!' },
+    { pic: '🐸⬆️', cap: 'Leap!' },
+    { pic: '🦊🎉', cap: 'Hooray!' },
+    { pic: '🐵🎉', cap: 'Party time!' },
+    { pic: '🐧🎊', cap: 'We did it!' },
+    { pic: '🐨😊', cap: 'So happy!' },
+    { pic: '🦁😁', cap: 'Big smile!' },
+    { pic: '🐻🍯', cap: 'Yum, honey!' },
+  ];
+  let queue, idx, tries, score, missed, current, answered;
+  let advanceTimer;
+  let best = 0; // highest score this page session (resets on reload)
+
+  function startGame() {
+    queue = shuffle(WORDS);
+    idx = 0; score = 0; missed = [];
+    $('start').style.display = 'none';
+    $('end').style.display = 'none';
+    $('game').style.display = '';
+    $('total').textContent = queue.length;
+    showWord();
+  }
+
+  function showWord() {
+    current = queue[idx];
+    tries = 0; answered = false;
+    $('num').textContent = idx + 1;
+    $('score').textContent = score;
+    $('msg').textContent = 'Which curtain has the right spelling?';
+    $('prompt').textContent = canSpeak ? '' : 'Spell: ' + current.word;
+
+    const stage = $('stage');
+    stage.innerHTML = '';
+    shuffle([current.word, ...current.decoys]).forEach(spelling => {
+      const win = document.createElement('div');
+      win.className = 'window';
+      win.innerHTML = '<div class="prize"></div><div class="curtain"></div>';
+      win.querySelector('.curtain').textContent = spelling;
+      // pointerdown (not click) so a tap counts the moment it lands, even if the finger drifts
+      win.addEventListener('pointerdown', e => { e.preventDefault(); pick(win, spelling); });
+      stage.appendChild(win);
+    });
+    speak(current.word);
+  }
+
+  function pick(win, spelling) {
+    if (answered || win.classList.contains('open')) return;
+    const prize = win.querySelector('.prize');
+    win.classList.add('open');
+    if (spelling === current.word) {
+      const pts = POINTS[Math.min(tries, POINTS.length - 1)];
+      score += pts;
+      answered = true;
+      if (tries > 0) missed.push(current.word);
+      let html = '<div class="big">🏆</div>';
+      if (tries === 0) {
+        const s = SCENES[Math.floor(Math.random() * SCENES.length)];
+        html += '<div class="scene">' + s.pic + '</div><div class="cap">' + s.cap + '</div>';
+      }
+      prize.innerHTML = html + '<div class="txt">+' + pts + '</div>';
+      win.classList.add('good');
+      $('score').textContent = score;
+      $('msg').textContent = tries === 0 ? '🎉 Perfect! You got it!' : '✅ You got it!';
+      // curtain takes 0.5s to open, then the prize shows for 1s
+      advanceTimer = setTimeout(() => {
+        if (idx === queue.length - 1) endGame();
+        else { idx++; showWord(); }
+      }, 1500);
+    } else {
+      tries++;
+      prize.innerHTML = '<div class="big">🐮</div><div class="txt">Oops!</div>';
+      $('msg').textContent = 'Uh-oh! Try another curtain.';
+    }
+  }
+
+  function endGame() {
+    $('game').style.display = 'none';
+    $('end').style.display = 'block';
+    $('final').textContent = score;
+    if (score > best) {
+      const first = best === 0;
+      best = score;
+      $('best').textContent = first ? '' : '🎉 New high score! 🎉';
+    } else {
+      $('best').textContent = 'High score: ' + best;
+    }
+    $('outof').textContent = 'out of ' + (queue.length * POINTS[0]) + ' possible';
+    $('missed').innerHTML = missed.length
+      ? 'Words to practice: <b>' + missed.join(', ') + '</b>'
+      : '⭐ Perfect game! Every word on the first try! ⭐';
+  }
+
+  // back to the start screen (used when the word list changes)
+  function stop() {
+    clearTimeout(advanceTimer);
+    $('game').style.display = 'none';
+    $('end').style.display = 'none';
+    $('start').style.display = '';
+  }
+
+  $('go').onclick = startGame;
+  $('again').onclick = startGame;
+  $('hear').onclick = () => speak(current.word);
+  return { stop };
+})();
+</script>
+<script>
+// ===== Word scramble =====
+const scramble = (function () {
+  const POINTS = 1000;
+  const SWAP_RADIUS = 50; // px from a box's center that counts as "dropped on top of" its letter
+  const panels = ['scStart', 'scGame', 'scEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+  const fmt = ms => {
+    const s = ms / 1000;
+    if (s < 60) return s.toFixed(1) + 's';
+    const m = Math.floor(s / 60);
+    return m + ':' + (s - m * 60).toFixed(1).padStart(4, '0');
+  };
+
+  let words, idx, score, current, locked = false, running = false;
+  let tiles = [], slots = [], poolCells = [], slotCells = [];
+  let advance = null; // set while waiting to move to the next word
+  let startTime, timerId, nextTimer, bestTime = null; // best time resets on reload
+
+  function updateBest() {
+    $('scBestHud').textContent = bestTime === null ? '--' : fmt(bestTime);
+    $('scStartBest').textContent = bestTime === null ? '' : '⏱ Best time: ' + fmt(bestTime);
+  }
+
+  function newGame() {
+    advance = null;
+    clearTimeout(nextTimer);
+    clearInterval(timerId);
+    words = shuffle(WORDS); // every word on the list, in random order
+    idx = 0; score = 0; running = true;
+    $('scTotal').textContent = words.length;
+    updateBest();
+    show('scGame');
+    startTime = performance.now();
+    $('scTime').textContent = fmt(0);
+    timerId = setInterval(() => { $('scTime').textContent = fmt(performance.now() - startTime); }, 100);
+    showWord();
+  }
+
+  function stop() {
+    advance = null;
+    clearTimeout(nextTimer);
+    clearInterval(timerId);
+    running = false;
+    if (canSpeak) speechSynthesis.cancel();
+    show('scStart');
+    updateBest();
+  }
+
+  function showWord() {
+    current = words[idx].word.toLowerCase(); // lists may capitalize (e.g. Easter)
+    locked = false;
+    $('scNum').textContent = idx + 1;
+    $('scScore').textContent = score;
+    $('scMsg').textContent = '';
+    $('scSlots').className = 'tray';
+
+    let order = [...current];
+    for (let tries = 0; tries < 20; tries++) {
+      order = shuffle([...current]);
+      if (order.join('') !== current) break; // make sure it really is scrambled
+    }
+    tiles = order.map((ch, i) => {
+      const tile = { ch, home: i, slot: null, el: document.createElement('div') };
+      tile.el.className = 'tile';
+      tile.el.textContent = ch;
+      tile.el.addEventListener('pointerdown', e => onDown(e, tile));
+      return tile;
+    });
+    slots = new Array(current.length).fill(null);
+
+    const makeCells = (container, cls) => {
+      container.innerHTML = '';
+      return slots.map(() => {
+        const c = document.createElement('div');
+        c.className = cls;
+        container.appendChild(c);
+        return c;
+      });
+    };
+    poolCells = makeCells($('scPool'), 'cell');
+    slotCells = makeCells($('scSlots'), 'slot');
+    render();
+    speak(current);
+  }
+
+  // Put every tile in its cell (a pool cell if unplaced, else its slot)
+  function render() {
+    tiles.forEach(t => {
+      t.el.classList.remove('dragging');
+      t.el.style.cssText = '';
+      (t.slot === null ? poolCells[t.home] : slotCells[t.slot]).appendChild(t.el);
+    });
+  }
+
+  function changed() {
+    $('scSlots').classList.remove('wrong');
+    $('scMsg').textContent = '';
+  }
+
+  function placeInSlot(tile, i) {
+    if (i < 0) return;
+    if (tile.slot !== null) slots[tile.slot] = null;
+    slots[i] = tile;
+    tile.slot = i;
+    changed();
+    render();
+    checkDone();
+  }
+
+  function returnHome(tile) {
+    if (tile.slot !== null) slots[tile.slot] = null;
+    tile.slot = null;
+    changed();
+    render();
+  }
+
+  function removeLast() {
+    for (let i = slots.length - 1; i >= 0; i--) {
+      if (slots[i]) { returnHome(slots[i]); return; }
+    }
+  }
+
+  function checkDone() {
+    if (slots.includes(null)) return;
+    if (slots.map(t => t.ch).join('') === current) return win();
+    const el = $('scSlots');
+    el.classList.remove('wrong');
+    void el.offsetWidth; // restart the shake animation
+    el.classList.add('wrong');
+    $('scMsg').textContent = 'Not quite. Move the letters around!';
+  }
+
+  function win() {
+    locked = true;
+    score += POINTS;
+    $('scScore').textContent = score;
+    $('scSlots').classList.add('good');
+    $('scMsg').textContent = '🎉 +' + POINTS + '!';
+    const last = idx === words.length - 1;
+    let elapsed = 0;
+    if (last) {
+      clearInterval(timerId);
+      elapsed = performance.now() - startTime;
+      $('scTime').textContent = fmt(elapsed);
+    }
+    // Moves on after 1s, or right away if Return is pressed
+    advance = () => {
+      advance = null;
+      clearTimeout(nextTimer);
+      if (last) finish(elapsed);
+      else { idx++; showWord(); }
+    };
+    nextTimer = setTimeout(advance, 1000);
+  }
+
+  function finish(ms) {
+    running = false;
+    show('scEnd');
+    $('scFinal').textContent = score;
+    $('scFinalTime').textContent = fmt(ms);
+    const first = bestTime === null;
+    if (first || ms < bestTime) {
+      bestTime = ms;
+      $('scBestMsg').textContent = first ? 'Best time: ' + fmt(ms) : '🎉 New best time! 🎉';
+    } else {
+      $('scBestMsg').textContent = 'Best time: ' + fmt(bestTime);
+    }
+    updateBest();
+  }
+
+  // --- Dragging (mouse or touch). A tap/click without moving sends the tile to the next spot. ---
+  function onDown(e, tile) {
+    if (!running || locked || e.button > 0) return;
+    e.preventDefault();
+    const rect = tile.el.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    let dragging = false;
+
+    const move = ev => {
+      if (!dragging && Math.hypot(ev.clientX - sx, ev.clientY - sy) > 6) {
+        dragging = true;
+        tile.el.classList.add('dragging');
+        tile.el.style.width = rect.width + 'px';
+        tile.el.style.height = rect.height + 'px';
+      }
+      if (dragging) {
+        tile.el.style.left = (rect.left + ev.clientX - sx) + 'px';
+        tile.el.style.top = (rect.top + ev.clientY - sy) + 'px';
+      }
+    };
+    const cleanup = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+    };
+    const cancel = () => { cleanup(); render(); };
+    const up = ev => {
+      cleanup();
+      if (!running || locked) return render();
+      if (!dragging) {
+        if (tile.slot === null) placeInSlot(tile, slots.indexOf(null));
+        else returnHome(tile);
+      } else {
+        drop(tile, ev.clientX, ev.clientY);
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+  }
+
+  // Forgiving drop: whichever tray is closer (vertically) wins, and a tile aimed at the
+  // answer row snaps to the nearest empty box, so it doesn't need to line up exactly.
+  function drop(tile, px, py) {
+    const pr = $('scPool').getBoundingClientRect();
+    const sr = $('scSlots').getBoundingClientRect();
+    const nearSlots = Math.abs(py - (sr.top + sr.height / 2)) < Math.abs(py - (pr.top + pr.height / 2));
+    if (!nearSlots) return returnHome(tile);
+    let best = -1, bestD = Infinity; // nearest empty box (the tile's own box counts as empty)
+    let over = -1, overD = Infinity; // nearest box overall
+    slotCells.forEach((c, i) => {
+      const r = c.getBoundingClientRect();
+      const d = Math.hypot(px - (r.left + r.width / 2), py - (r.top + r.height / 2));
+      if (d < overD) { overD = d; over = i; }
+      if (slots[i] && slots[i] !== tile) return; // taken by another tile
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    // Dropped right on top of another letter: swap places with it
+    if (slots[over] && slots[over] !== tile && overD < SWAP_RADIUS) return swapInto(tile, over);
+    placeInSlot(tile, best);
+  }
+
+  // The other letter takes the dragged tile's old box, or goes back to the tray if it came from there
+  function swapInto(tile, i) {
+    const other = slots[i];
+    if (tile.slot !== null) { slots[tile.slot] = other; other.slot = tile.slot; }
+    else other.slot = null;
+    slots[i] = tile;
+    tile.slot = i;
+    changed();
+    render();
+    checkDone();
+  }
+
+  // --- Typing: a letter goes to the next empty box; Delete/Backspace takes the last one back ---
+  window.addEventListener('keydown', e => {
+    if (!running || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (locked) {
+      if (e.key === 'Enter' && !e.repeat && advance) { e.preventDefault(); advance(); }
+      return;
+    }
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      removeLast();
+    } else if (/^[a-z]$/i.test(e.key)) {
+      const ch = e.key.toLowerCase();
+      const tile = tiles.find(t => t.slot === null && t.ch === ch);
+      if (tile) placeInSlot(tile, slots.indexOf(null));
+    }
+  });
+
+  $('scGo').onclick = newGame;
+  $('scAgain').onclick = newGame;
+  $('scReset').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('scHear').onclick = e => { e.currentTarget.blur(); speak(current); };
+  if (!canSpeak) $('scHear').style.display = 'none';
+  show('scStart');
+
+  return { stop };
+})();
+
+// ===== Code breaker =====
+const decoder = (function () {
+  const POINTS = 1000;
+  const panels = ['dcStart', 'dcGame', 'dcEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+  const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+
+  // --- Morse ---
+  const MORSE = {
+    a: '.-', b: '-...', c: '-.-.', d: '-..', e: '.', f: '..-.', g: '--.', h: '....', i: '..', j: '.---',
+    k: '-.-', l: '.-..', m: '--', n: '-.', o: '---', p: '.--.', q: '--.-', r: '.-.', s: '...', t: '-',
+    u: '..-', v: '...-', w: '.--', x: '-..-', y: '-.--', z: '--..',
+  };
+  const morseHtml = ch => '<div class="morse">' +
+    [...MORSE[ch]].map(m => '<span class="' + (m === '.' ? 'mdot' : 'mdash') + '"></span>').join('') + '</div>';
+
+  // --- Pigpen: a-i = # grid, j-r = # grid with dot, s-v = X grid, w-z = X grid with dot ---
+  const WEDGES = [ // top, left, right, bottom: S T U V (W X Y Z with a dot)
+    { pts: '7,7 20,20 33,7',   dot: [20, 11] },
+    { pts: '7,7 20,20 7,33',   dot: [11, 20] },
+    { pts: '33,7 20,20 33,33', dot: [29, 20] },
+    { pts: '7,33 20,20 33,33', dot: [20, 29] },
+  ];
+  function pigpenSvg(ch, size) {
+    const i = ALPHABET.indexOf(ch);
+    let body = '', dot = null;
+    if (i < 18) {
+      const g = i % 9, r = Math.floor(g / 3), c = g % 3;
+      const line = (x1, y1, x2, y2) => '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+      if (r > 0) body += line(9, 9, 31, 9);
+      if (r < 2) body += line(9, 31, 31, 31);
+      if (c > 0) body += line(9, 9, 9, 31);
+      if (c < 2) body += line(31, 9, 31, 31);
+      if (i >= 9) dot = [20, 20];
+    } else {
+      const k = i - 18, w = WEDGES[k % 4];
+      body = '<polyline points="' + w.pts + '"/>';
+      if (k >= 4) dot = w.dot;
+    }
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 40 40" fill="none" stroke="#3a2400" ' +
+      'stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">' + body +
+      (dot ? '<circle cx="' + dot[0] + '" cy="' + dot[1] + '" r="2.8" fill="#3a2400" stroke="none"/>' : '') + '</svg>';
+  }
+
+
+  // The traditional pigpen chart: two # grids and two X shapes, as one picture
+  function pigpenChartSvg() {
+    const S = 150, C = S / 3, GAP = 34, PAD = 14, INK = '#3a2400';
+    const W = PAD * 2 + 4 * S + 3 * GAP, H = PAD * 2 + S;
+    let lines = '', marks = '';
+    const letter = (ch, x, y) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" ' +
+      'font-size="26" font-weight="bold" fill="' + INK + '" stroke="none">' + ch.toUpperCase() + '</text>';
+    const dot = (x, y) => '<circle cx="' + x + '" cy="' + y + '" r="4.2" fill="' + INK + '" stroke="none"/>';
+    for (let f = 0; f < 4; f++) {
+      const ox = PAD + f * (S + GAP), oy = PAD, dotted = f % 2 === 1;
+      if (f < 2) {
+        lines += '<path d="M' + (ox + C) + ' ' + oy + 'V' + (oy + S) + 'M' + (ox + 2 * C) + ' ' + oy + 'V' + (oy + S) +
+          'M' + ox + ' ' + (oy + C) + 'H' + (ox + S) + 'M' + ox + ' ' + (oy + 2 * C) + 'H' + (ox + S) + '"/>';
+        for (let g = 0; g < 9; g++) {
+          const cx = ox + C * (g % 3) + C / 2, cy = oy + C * Math.floor(g / 3) + C / 2;
+          marks += letter(ALPHABET[f * 9 + g], cx, dotted ? cy - 6 : cy);
+          if (dotted) marks += dot(cx, cy + 14);
+        }
+      } else {
+        lines += '<path d="M' + ox + ' ' + oy + 'L' + (ox + S) + ' ' + (oy + S) + 'M' + (ox + S) + ' ' + oy + 'L' + ox + ' ' + (oy + S) + '"/>';
+        const mx = ox + S / 2, my = oy + S / 2;
+        const spots = [[mx, oy + 30, 0, 17], [ox + 30, my, 17, 0], [ox + S - 30, my, -17, 0], [mx, oy + S - 30, 0, -17]]; // top, left, right, bottom
+        spots.forEach(([x, y, dx, dy], k) => {
+          marks += letter(ALPHABET[18 + (f - 2) * 4 + k], x, y);
+          if (dotted) marks += dot(x + dx, y + dy);
+        });
+      }
+    }
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:760px;height:auto">' +
+      '<rect width="' + W + '" height="' + H + '" rx="14" fill="#fff3c4"/>' +
+      '<g fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round">' + lines + '</g>' + marks + '</svg>';
+  }
+
+  // A phone keypad picture; each key shows its number big on top and its letters small across the bottom
+  function keypadSvg() {
+    const KW = 96, KH = 86, G = 6, PAD = 12;
+    const W = PAD * 2 + 3 * KW + 2 * G, H = PAD * 2 + 4 * KH + 3 * G;
+    const letters = {};
+    PHONE.forEach(([d, ls]) => { letters[d] = ls; });
+    const rows = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['*', '0', '#']];
+    const text = (t, x, y, size, fill) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" dominant-baseline="central" ' +
+      'font-size="' + size + '" font-weight="bold" fill="' + fill + '">' + t + '</text>';
+    let out = '<rect width="' + W + '" height="' + H + '" rx="24" fill="#3b2478"/>';
+    rows.forEach((row, r) => row.forEach((d, c) => {
+      const x = PAD + c * (KW + G), y = PAD + r * (KH + G), cx = x + KW / 2;
+      out += '<rect x="' + x + '" y="' + y + '" width="' + KW + '" height="' + KH + '" rx="14" fill="#fff3c4"/>';
+      out += text(d, cx, y + 31, 40, '#3a2400');
+      const ls = letters[d];
+      if (ls) {
+        const step = ls.length === 4 ? 22 : 26; // spread the letters evenly across the bottom
+        [...ls].forEach((ch, i) => {
+          out += text(ch.toUpperCase(), cx + (i - (ls.length - 1) / 2) * step, y + KH - 17, 17, '#3a2400');
+        });
+      }
+    }));
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:320px;height:auto">' + out + '</svg>' +
+      '<div style="width:100%; opacity:.85">The arrow tells you which letter under the number: ' + DIRS[0] + ' first, ' + DIRS[1] + ' second, ' +
+      DIRS[2] + ' third, ' + DIRS[3] + ' fourth.</div>';
+  }
+
+
+  // Atbash key: A-M on top, Z-N underneath, so each column is a pair that swaps
+  function atbashKey() {
+    const top = [...ALPHABET].slice(0, 13), low = [...ALPHABET].slice(13).reverse();
+    const cell = (ch, cls) => '<div class="kitem ' + cls + '"><span class="kl">' + ch.toUpperCase() + '</span></div>';
+    return '<div class="atkey">' + top.map(c => cell(c, 'up')).join('') + low.map(c => cell(c, 'low')).join('') + '</div>';
+  }
+
+  // --- Phone keypad: the arrow says which letter under the number (down-left, down, down-right, double-down = 1st..4th) ---
+  const PHONE = [['2', 'abc'], ['3', 'def'], ['4', 'ghi'], ['5', 'jkl'], ['6', 'mno'], ['7', 'pqrs'], ['8', 'tuv'], ['9', 'wxyz']];
+  const DIRS = ['↙', '↓', '↘', '⇓'];
+  const phoneOf = {};
+  PHONE.forEach(([d, ls]) => [...ls].forEach((ch, i) => { phoneOf[ch] = { digit: d, dir: DIRS[i] }; }));
+
+  const CIPHERS = {
+    morse: {
+      name: 'Morse code',
+      symbol: morseHtml,
+      key: () => [...ALPHABET].map(ch =>
+        '<div class="kitem"><span class="kl">' + ch + '</span><span class="kc">' + MORSE[ch].replace(/\./g, '•').replace(/-/g, '–') + '</span></div>').join(''),
+    },
+    pigpen: {
+      name: 'Pigpen cipher',
+      symbol: ch => pigpenSvg(ch, 64),
+      key: pigpenChartSvg,
+    },
+    phone: {
+      name: 'Phone cipher',
+      symbol: ch => '<div class="ph-d">' + phoneOf[ch].digit + '</div><div class="ph-a">' + phoneOf[ch].dir + '</div>',
+      key: keypadSvg,
+    },
+    atbash: {
+      name: 'Atbash cipher',
+      symbol: ch => '<div class="at-l">' + ALPHABET[25 - ALPHABET.indexOf(ch)].toUpperCase() + '</div>',
+      key: atbashKey,
+    },
+  };
+
+  // --- Game ---
+  let words, idx, score, current, answer, given, locked = false, running = false, advance = null, nextTimer;
+
+  function newGame() {
+    advance = null;
+    clearTimeout(nextTimer);
+    words = shuffle(WORDS); // every word on the list, in random order
+    idx = 0; score = 0; running = true;
+    $('dcTotal').textContent = words.length;
+    show('dcGame');
+    showWord();
+  }
+
+  function stop() {
+    advance = null;
+    clearTimeout(nextTimer);
+    running = false;
+    show('dcStart');
+  }
+
+  function showWord() {
+    current = words[idx].word.toLowerCase(); // lists may capitalize (e.g. Easter)
+    // Anything that isn't a letter (like the apostrophe in "don't") is filled in already and not encoded
+    answer = [...current].map(ch => ALPHABET.includes(ch) ? '' : ch);
+    given = answer.map(a => a !== '');
+    locked = false;
+    $('dcNum').textContent = idx + 1;
+    $('dcScore').textContent = score;
+    $('dcMsg').textContent = '';
+    $('dcPuzzle').className = '';
+
+    const names = Object.keys(CIPHERS);
+    const cipher = CIPHERS[names[Math.floor(Math.random() * names.length)]];
+    $('dcCipher').innerHTML = 'Secret code: <b>' + cipher.name + '</b>';
+    $('dcKeyLabel').textContent = 'Key: ' + cipher.name;
+    $('dcKey').innerHTML = cipher.key();
+
+    const puzzle = $('dcPuzzle');
+    puzzle.innerHTML = '';
+    [...current].forEach((ch, i) => {
+      const col = document.createElement('div');
+      if (given[i]) {
+        col.className = 'dc-col given';
+        col.innerHTML = '<div class="dc-sym"></div><div class="dc-ans"></div>';
+      } else {
+        col.className = 'dc-col';
+        col.innerHTML = '<div class="dc-sym">' + cipher.symbol(ch) + '</div><div class="dc-ans"></div>';
+        col.querySelector('.dc-ans').addEventListener('pointerdown', e => { e.preventDefault(); clearAt(i); });
+      }
+      puzzle.appendChild(col);
+    });
+    render();
+  }
+
+  function render() {
+    const next = answer.indexOf('');
+    document.querySelectorAll('#dcPuzzle .dc-ans').forEach((el, i) => {
+      el.textContent = answer[i];
+      el.classList.toggle('filled', answer[i] !== '' && !given[i]);
+      el.classList.toggle('next', i === next && !locked);
+    });
+  }
+
+  function changed() {
+    $('dcPuzzle').classList.remove('wrong');
+    $('dcMsg').textContent = '';
+  }
+
+  function typeLetter(ch) {
+    const i = answer.indexOf('');
+    if (i < 0) return;
+    answer[i] = ch;
+    changed();
+    render();
+    checkDone();
+  }
+
+  function clearAt(i) {
+    if (!running || locked || given[i] || !answer[i]) return;
+    answer[i] = '';
+    changed();
+    render();
+  }
+
+  function removeLast() {
+    for (let i = answer.length - 1; i >= 0; i--) {
+      if (answer[i] && !given[i]) return clearAt(i);
+    }
+  }
+
+  function checkDone() {
+    if (answer.includes('')) return;
+    if (answer.join('') === current) return win();
+    const el = $('dcPuzzle');
+    el.classList.remove('wrong');
+    void el.offsetWidth; // restart the shake animation
+    el.classList.add('wrong');
+    $('dcMsg').textContent = 'Not quite. Check the key and try again!';
+  }
+
+  function win() {
+    locked = true;
+    score += POINTS;
+    $('dcScore').textContent = score;
+    $('dcPuzzle').classList.add('good');
+    $('dcMsg').textContent = '🎉 +' + POINTS + '!';
+    render();
+    const last = idx === words.length - 1;
+    // Moves on after 1s, or right away if Return is pressed
+    advance = () => {
+      advance = null;
+      clearTimeout(nextTimer);
+      if (last) finish();
+      else { idx++; showWord(); }
+    };
+    nextTimer = setTimeout(advance, 1000);
+  }
+
+  function finish() {
+    running = false;
+    show('dcEnd');
+    $('dcFinal').textContent = score;
+    $('dcOutOf').textContent = 'out of ' + (words.length * POINTS) + ' possible';
+  }
+
+  window.addEventListener('keydown', e => {
+    if (!running || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (locked) {
+      if (e.key === 'Enter' && !e.repeat && advance) { e.preventDefault(); advance(); }
+      return;
+    }
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      removeLast();
+    } else if (/^[a-z]$/i.test(e.key)) {
+      typeLetter(e.key.toLowerCase());
+    }
+  });
+
+  $('dcGo').onclick = newGame;
+  $('dcAgain').onclick = newGame;
+  show('dcStart');
+
+  return { stop };
+})();
+
+// ===== Blaster game =====
+const blaster = (function () {
+  const POINTS = [1000, 500, 250];
+  const W = 900, H = 520, SHIP_Y = H - 36;
+  const canvas = $('blCanvas'), ctx = canvas.getContext('2d');
+  const panels = ['blStart', 'blGame', 'blEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+
+  let words, idx, score, tries, current, locked, running = false, missed;
+  let rocks = [], bolts = [], sparks = [], floaters = [];
+  let ship = { x: W / 2, target: W / 2 };
+  let raf = 0, last = 0, advanceTimer, advance = null;
+  let best = 0; // highest score this page session (resets on reload)
+  const keys = { left: false, right: false };
+  const stars = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.6 + 0.4 }));
+
+  // --- rounds ---
+  function newGame() {
+    words = shuffle(WORDS.filter(w => w.meaning && w.lookalikes && w.lookalikes.length));
+    if (!words.length) { $('blNone').textContent = 'This word list has no meanings yet, so the Blaster game can\'t use it.'; return; }
+    $('blNone').textContent = '';
+    idx = 0; score = 0; missed = [];
+    ship.x = ship.target = W / 2;
+    $('blTotal').textContent = words.length;
+    show('blGame');
+    if (document.activeElement) document.activeElement.blur(); // so Space fires instead of re-clicking a button
+    running = true;
+    startRound();
+    last = performance.now();
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function makeRock(text, correct, lane, lanes, order) {
+    ctx.font = 'bold 30px "Trebuchet MS", sans-serif';
+    const r = Math.max(56, ctx.measureText(text).width / 2 + 20);
+    const laneW = W / lanes;
+    const n = 14;
+    return {
+      text, correct, r,
+      x: laneW * (lane + 0.5), y: -r * 0.6 - order * 75,
+      vy: 26 + Math.random() * 8, // slow
+      angle: Math.random() * 6, spin: (Math.random() - 0.5) * 0.25,
+      poly: Array.from({ length: n }, (_, i) => 0.86 + Math.random() * 0.22),
+      craters: Array.from({ length: 3 }, () => ({ a: Math.random() * 6.28, d: 0.3 + Math.random() * 0.4, s: 0.08 + Math.random() * 0.1 })),
+      flash: 0, shake: 0, dead: false,
+    };
+  }
+
+  function startRound() {
+    current = words[idx];
+    tries = 0; locked = false; advance = null;
+    $('blNum').textContent = idx + 1;
+    $('blScore').textContent = score;
+    $('blMsg').textContent = '';
+    $('blMeaning').innerHTML = '<small>Blast the word that means</small>' + current.meaning +
+      (canSpeak ? ' <button id="blRead">🔊</button>' : '');
+    if (canSpeak) $('blRead').onclick = e => { e.stopPropagation(); speak(current.meaning); };
+    const others = shuffle(current.lookalikes.filter(w => w.toLowerCase() !== current.word.toLowerCase())).slice(0, 3);
+    const texts = shuffle([{ t: current.word, c: true }, ...others.map(t => ({ t, c: false }))]);
+    const lanes = shuffle(texts.map((_, i) => i)), order = shuffle(texts.map((_, i) => i));
+    rocks = texts.map((x, i) => makeRock(x.t, x.c, lanes[i], texts.length, order[i]));
+    bolts = [];
+  }
+
+  function nextRound() {
+    clearTimeout(advanceTimer);
+    advance = null;
+    if (idx === words.length - 1) finish();
+    else { idx++; startRound(); }
+  }
+
+  function finish() {
+    running = false;
+    cancelAnimationFrame(raf);
+    show('blEnd');
+    $('blFinal').textContent = score;
+    $('blOutOf').textContent = 'out of ' + (words.length * POINTS[0]) + ' possible';
+    if (score > best) {
+      const first = best === 0;
+      best = score;
+      $('blBest').textContent = first ? '' : '🎉 New high score! 🎉';
+    } else {
+      $('blBest').textContent = 'High score: ' + best;
+    }
+    $('blMissed').innerHTML = missed.length
+      ? 'Words to practice: <b>' + missed.join(', ') + '</b>'
+      : '⭐ Perfect game! Every word on the first shot! ⭐';
+  }
+
+  function stop() {
+    running = false;
+    keys.left = keys.right = false;
+    cancelAnimationFrame(raf);
+    clearTimeout(advanceTimer);
+    advance = null;
+    show('blStart');
+  }
+
+  // --- shooting ---
+  function fire(tx, ty) {
+    if (!running || locked) return;
+    let dx = tx - ship.x, dy = ty - SHIP_Y;
+    if (dy > -10) dy = -10; // always shoot upward
+    const len = Math.hypot(dx, dy);
+    bolts.push({ x: ship.x, y: SHIP_Y - 24, dx: dx / len, dy: dy / len });
+  }
+
+  function boom(rock, count) {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * 6.28, v = 60 + Math.random() * 240;
+      sparks.push({ x: rock.x, y: rock.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.6 + Math.random() * 0.5, max: 1.1, c: Math.random() < 0.5 ? '#ffd84a' : '#ff8a3d' });
+    }
+  }
+
+  function hit(rock) {
+    if (rock.correct) {
+      const pts = POINTS[Math.min(tries, POINTS.length - 1)];
+      score += pts;
+      if (tries > 0) missed.push(current.word);
+      locked = true;
+      rocks.forEach(r => { r.dead = true; boom(r, 26); });
+      $('blScore').textContent = score;
+      $('blMsg').innerHTML = '🎉 <b>' + current.word + '</b> &nbsp;+' + pts;
+      advance = nextRound;
+      advanceTimer = setTimeout(nextRound, 1800);
+    } else {
+      tries++;
+      rock.flash = 0.45; rock.shake = 0.45;
+      boom(rock, 6);
+      floaters.push({ x: rock.x, y: rock.y - rock.r - 6, text: 'Not this one!', life: 1 });
+      $('blMsg').textContent = 'That word has a different meaning. Try another!';
+    }
+  }
+
+  // --- loop ---
+  function frame(now) {
+    if (!running) return;
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    update(dt);
+    draw();
+    raf = requestAnimationFrame(frame);
+  }
+
+  function update(dt) {
+    if (keys.left) ship.target -= 520 * dt;
+    if (keys.right) ship.target += 520 * dt;
+    ship.target = Math.max(30, Math.min(W - 30, ship.target));
+    ship.x += (ship.target - ship.x) * Math.min(1, dt * 12);
+
+    for (const r of rocks) {
+      if (r.dead) continue;
+      r.y += r.vy * dt;
+      r.angle += r.spin * dt;
+      r.flash = Math.max(0, r.flash - dt);
+      r.shake = Math.max(0, r.shake - dt);
+      if (r.y > SHIP_Y + r.r) r.y = -r.r; // drifted past: come around again
+    }
+    for (const b of bolts) {
+      const total = 1100 * dt;
+      for (let moved = 0; b.live !== false && moved < total; moved += 12) {
+        const step = Math.min(12, total - moved);
+        b.x += b.dx * step; b.y += b.dy * step;
+        const rock = rocks.find(r => !r.dead && Math.hypot(r.x - b.x, r.y - b.y) < r.r * 0.95);
+        if (rock) { b.live = false; hit(rock); }
+        else if (b.y < -20 || b.x < -20 || b.x > W + 20) b.live = false;
+      }
+    }
+    bolts = bolts.filter(b => b.live !== false);
+    for (const s of sparks) { s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt; }
+    sparks = sparks.filter(s => s.life > 0);
+    for (const f of floaters) { f.y -= 30 * dt; f.life -= dt; }
+    floaters = floaters.filter(f => f.life > 0);
+    rocks = rocks.filter(r => !r.dead);
+  }
+
+  function draw() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#080520'); g.addColorStop(1, '#1d1450');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    for (const s of stars) { ctx.globalAlpha = 0.4 + s.r / 3; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill(); }
+    ctx.globalAlpha = 1;
+
+    for (const r of rocks) if (!r.dead) drawRock(r);
+
+    // bolts
+    ctx.strokeStyle = '#7dffb0'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    for (const b of bolts) { ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.dx * 26, b.y - b.dy * 26); ctx.stroke(); }
+
+    for (const s of sparks) { ctx.globalAlpha = Math.max(0, s.life / s.max); ctx.fillStyle = s.c; ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, 6.28); ctx.fill(); }
+    ctx.globalAlpha = 1;
+
+    ctx.font = 'bold 24px "Trebuchet MS", sans-serif'; ctx.textAlign = 'center';
+    for (const f of floaters) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = '#ff9b9b'; ctx.fillText(f.text, f.x, f.y); }
+    ctx.globalAlpha = 1;
+
+    drawShip();
+  }
+
+  function drawRock(r) {
+    const jx = r.shake ? Math.sin(r.shake * 90) * 6 : 0;
+    ctx.save();
+    ctx.translate(r.x + jx, r.y);
+    ctx.save();
+    ctx.rotate(r.angle);
+    ctx.beginPath();
+    r.poly.forEach((k, i) => {
+      const a = (i / r.poly.length) * 6.2832;
+      const px = Math.cos(a) * r.r * k, py = Math.sin(a) * r.r * k;
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    });
+    ctx.closePath();
+    ctx.fillStyle = r.flash ? '#d9534f' : '#7a6a5a';
+    ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = r.flash ? '#ffb3b0' : '#4a3d33'; ctx.stroke();
+    ctx.fillStyle = r.flash ? '#b53f3b' : '#65574a';
+    for (const c of r.craters) {
+      ctx.beginPath(); ctx.arc(Math.cos(c.a) * r.r * c.d, Math.sin(c.a) * r.r * c.d, r.r * c.s, 0, 6.28); ctx.fill();
+    }
+    ctx.restore();
+    ctx.font = 'bold 30px "Trebuchet MS", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineWidth = 6; ctx.strokeStyle = '#1a1208'; ctx.lineJoin = 'round';
+    ctx.strokeText(r.text, 0, 2);
+    ctx.fillStyle = '#fff'; ctx.fillText(r.text, 0, 2);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawShip() {
+    ctx.save();
+    ctx.translate(ship.x, SHIP_Y);
+    ctx.fillStyle = '#ffd84a'; ctx.strokeStyle = '#b88f00'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(0, -26); ctx.lineTo(22, 20); ctx.lineTo(0, 11); ctx.lineTo(-22, 20); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#7dd3ff'; ctx.beginPath(); ctx.arc(0, -2, 6, 0, 6.28); ctx.fill();
+    ctx.restore();
+  }
+
+  // --- controls ---
+  function canvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) * W / rect.width, y: (e.clientY - rect.top) * H / rect.height };
+  }
+  canvas.addEventListener('pointermove', e => { ship.target = canvasPoint(e).x; });
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const p = canvasPoint(e);
+    ship.target = p.x;
+    fire(p.x, p.y);
+  });
+  window.addEventListener('keydown', e => {
+    if (!running) return;
+    if (e.key === 'Enter' && !e.repeat && advance) { e.preventDefault(); advance(); }
+    else if (e.key === 'ArrowLeft') { keys.left = true; e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { keys.right = true; e.preventDefault(); }
+    else if (e.key === ' ' && !e.repeat) { e.preventDefault(); fire(ship.x, 0); }
+  });
+  window.addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft') keys.left = false;
+    if (e.key === 'ArrowRight') keys.right = false;
+  });
+
+  $('blGo').onclick = newGame;
+  $('blAgain').onclick = newGame;
+  show('blStart');
+
+  return { stop };
+})();
+
+// ===== Switching between the games =====
+const GAMES = {
+  curtain:  { tab: 'tabCurtain',  panel: 'curtainGame',  stop: () => curtain.stop() },
+  scramble: { tab: 'tabScramble', panel: 'scrambleGame', stop: () => scramble.stop() },
+  decode:   { tab: 'tabDecode',   panel: 'decodeGame',   stop: () => decoder.stop() },
+  blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  stop: () => blaster.stop() },
+};
+function showTab(which) {
+  for (const [name, g] of Object.entries(GAMES)) {
+    const on = name === which;
+    $(g.panel).style.display = on ? 'flex' : 'none';
+    $(g.tab).classList.toggle('active', on);
+    // leaving a round in progress sends that game back to its start screen
+    if (!on && g.stop) g.stop();
+  }
+}
+for (const [name, g] of Object.entries(GAMES)) $(g.tab).onclick = () => showTab(name);
+
+// ===== Choosing the word list =====
+WORD_LISTS.forEach((l, i) => $('listPick').add(new Option(l.name, i)));
+$('listPick').onchange = () => {
+  WORDS = WORD_LISTS[$('listPick').value].words;
+  for (const g of Object.values(GAMES)) g.stop();
+};
+</script>
+</body>
+</html>
