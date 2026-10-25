@@ -47,9 +47,9 @@
   .note { font-size: 10pt; }
   .dice { display: flex; gap: 1pt; }
   .dc-sym .dice svg { width: 13pt; height: 13pt; }
-  .dicekey { display: grid; grid-template-columns: repeat(7, 34pt); gap: 4pt; align-items: center; justify-items: center; }
+  .dicekey { display: grid; grid-template-columns: repeat(6, 32pt); grid-auto-rows: 30pt; align-items: center; justify-items: center; }
   .dicekey .dk-head svg { width: 22pt; height: 22pt; }
-  .dicekey .kitem { min-width: 30pt; }
+  .dicekey .kitem { width: 100%; height: 100%; min-width: 0; justify-content: center; border-radius: 0; margin: -0.5pt 0 0 -0.5pt; }
   .dknote { font-size: 10pt; margin-bottom: 4pt; }
   @media print { .controls { display: none; } body { padding: 0; } }
 </style>
@@ -183,7 +183,7 @@ function atbashKey() {
   return '<div class="atkey">' + top.map(c => cell(c, 'up')).join('') + low.map(c => cell(c, 'low')).join('') + '</div>';
 }
 
-// --- Dice: letter number + 6 = red × 6 + white, so A = red 1 + white 1, F = 1 + 6, G = 2 + 1, Z = 5 + 2 ---
+// --- Greek square (Polybius square) with dice: red die = row, white die = column. A = 1-1, E = 1-5, F = 2-1, Y = 5-5, Z = 6-1 ---
 const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] }; // spots on a 3×3 grid, 1 = top left
 function dieSvg(n, red, size) {
   const pips = PIPS[n].map(p => {
@@ -195,16 +195,16 @@ function dieSvg(n, red, size) {
     (red ? 'fill="#d62839" stroke="#8f1020"' : 'fill="#ffffff" stroke="#3a2400"') + '/>' +
     '<g fill="' + (red ? '#ffffff' : '#1a1208') + '">' + pips + '</g></svg>';
 }
-const diceOf = ch => { const n = ALPHABET.indexOf(ch) + 6; return [Math.floor(n / 6), n % 6 + 1]; }; // [red, white]
+const diceOf = ch => { const i = ALPHABET.indexOf(ch); return [Math.floor(i / 5) + 1, i % 5 + 1]; }; // [red, white]; z falls in row 6
 const diceHtml = ch => { const [r, w] = diceOf(ch); return '<div class="dice">' + dieSvg(r, true, 40) + dieSvg(w, false, 40) + '</div>'; };
-// Key: a grid with a row for each red die and a column for each white die
+// Key: the Greek square, a 5×5 grid (red die = row, white die = column) plus a 6th row for Z
 function diceKey() {
   let cells = '<div></div>';
-  for (let w = 1; w <= 6; w++) cells += '<div class="dk-head">' + dieSvg(w, false, 34) + '</div>';
-  for (let r = 1; r <= 5; r++) {
+  for (let w = 1; w <= 5; w++) cells += '<div class="dk-head">' + dieSvg(w, false, 34) + '</div>';
+  for (let r = 1; r <= 6; r++) {
     cells += '<div class="dk-head">' + dieSvg(r, true, 34) + '</div>';
-    for (let w = 1; w <= 6; w++) {
-      const ch = ALPHABET[(r - 1) * 6 + w - 1];
+    for (let w = 1; w <= 5; w++) {
+      const ch = ALPHABET[(r - 1) * 5 + w - 1];
       cells += ch ? '<div class="kitem"><span class="kl">' + ch + '</span></div>' : '<div></div>';
     }
   }
@@ -239,8 +239,8 @@ const CIPHERS = {
     symbol: ch => '<div class="at-l">' + ALPHABET[25 - ALPHABET.indexOf(ch)].toUpperCase() + '</div>',
     key: atbashKey,
   },
-  dice: {
-    name: 'Dice code',
+  greek: {
+    name: 'Greek Square code',
     symbol: diceHtml,
     key: diceKey,
   },
@@ -277,12 +277,12 @@ function build() {
         : '<div class="col given"><div class="dc-sym"></div><div class="ans">' + ch + '</div></div>' // e.g. the ' in "don't"
       ).join('') + '</div>';
   }).join('');
-  // dice comes right after phone so the two small keys can share a row
-  const used = ['morse', 'pigpen', 'phone', 'dice', 'atbash'].filter(k => kinds.includes(k));
+  // the Greek square comes right after phone so the two small keys can share a row
+  const used = ['morse', 'pigpen', 'phone', 'greek', 'atbash'].filter(k => kinds.includes(k));
   $('keys').innerHTML = '<h1>KEYS</h1>' + used.map(k => {
     const c = CIPHERS[k];
     const body = k === 'morse' ? '<div class="keywrap">' + c.key() + '</div>' : bw(c.key());
-    return '<section class="' + (k === 'phone' ? 'kcol' : k === 'dice' ? 'kside' : '') + '"><h2>' + c.name + '</h2>' + body + '</section>';
+    return '<section class="' + (k === 'phone' ? 'kcol' : k === 'greek' ? 'kside' : '') + '"><h2>' + c.name + '</h2>' + body + '</section>';
   }).join('');
 }
 const $ = id => document.getElementById(id);
