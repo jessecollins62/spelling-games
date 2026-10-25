@@ -114,6 +114,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
   - **Pigpen cipher**: grid and X shapes, with dots for the second half (SVG).
   - **Phone cipher**: keypad digit plus an arrow for which letter on that key (↙ ↓ ↘ ⇓ = 1st–4th).
   - **Atbash**: the reversed alphabet (a↔z, b↔y, ...).
+  - **Dice code**: two dice per letter, a red die with white dots and a white die with black dots. The letter's number (a=1 ... z=26) plus 6 equals red × 6 + white, so `a` = red 1 + white 1, `f` = 1 + 6, `g` = 2 + 1, `m` = 3 + 1, `z` = 5 + 2. The red die only goes 1–5. The key is a grid: a row for each red die, a column for each white die (`dieSvg`, `diceOf`, `diceKey`).
 - A key for the current cipher is shown below the puzzle.
 - The player **types** letters into the answer boxes. Backspace removes the last letter; tapping a box clears it.
 - Anything that isn't a letter a–z (the apostrophe in `don't`, `I'll`, ...) is **filled in already**: it shows in its place with no code symbol and no box. It is skipped when typing, and Backspace and tapping can't remove it (the `given` array).
@@ -139,7 +140,8 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - Every word on the list gets a row of cipher symbols with blank lines to write under. Ciphers are spread about evenly across the words.
 - Apostrophes (any non-letter) are printed in place instead of encoded, matching the game.
 - Page 2 ("KEYS") shows the key for each cipher used.
-- Black and white only: colored fills become outlines, and Morse is drawn as SVG so it prints even when browsers skip background colors.
+- Black and white only: colored fills become outlines, red dice print as black dice with white dots, and Morse is drawn as SVG so it prints even when browsers skip background colors.
+- On the KEYS page, the phone keypad and dice key sit side by side so all five keys fit on one page.
 - The layout is two columns of ten rows, designed for 20-word lists. LMB lists (10 words) fill one column.
 
 ## Known issues and limits

@@ -135,6 +135,10 @@
   .atkey { display: grid; grid-template-columns: repeat(13, 1fr); gap: 6px; width: 100%; }
   .atkey .kitem { min-width: 0; padding: 8px 0; }
   .atkey .kitem.low { background: #ffe08a; }
+  .dice { display: flex; gap: 6px; }
+  .dicekey { display: grid; grid-template-columns: repeat(7, auto); gap: 6px; align-items: center; justify-items: center; }
+  .dicekey .kitem { min-width: 46px; }
+  .dknote { width: 100%; font-size: 1rem; opacity: .85; margin-bottom: 2px; }
   .key { gap: 8px; }
   .kitem {
     background: #fff3c4; color: #3a2400; border-radius: 10px; padding: 6px 8px; min-width: 58px;
@@ -815,6 +819,34 @@ const decoder = (function () {
   }
 
   // --- Phone keypad: the arrow says which letter under the number (down-left, down, down-right, double-down = 1st..4th) ---
+  // --- Dice: letter number + 6 = red × 6 + white, so A = red 1 + white 1, F = 1 + 6, G = 2 + 1, Z = 5 + 2 ---
+  const PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] }; // spots on a 3×3 grid, 1 = top left
+  function dieSvg(n, red, size) {
+    const pips = PIPS[n].map(p => {
+      const x = 11 + ((p - 1) % 3) * 9, y = 11 + Math.floor((p - 1) / 3) * 9;
+      return '<circle cx="' + x + '" cy="' + y + '" r="3.6"/>';
+    }).join('');
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 40 40">' +
+      '<rect x="2" y="2" width="36" height="36" rx="7" stroke-width="2.5" ' +
+      (red ? 'fill="#d62839" stroke="#8f1020"' : 'fill="#ffffff" stroke="#3a2400"') + '/>' +
+      '<g fill="' + (red ? '#ffffff' : '#1a1208') + '">' + pips + '</g></svg>';
+  }
+  const diceOf = ch => { const n = ALPHABET.indexOf(ch) + 6; return [Math.floor(n / 6), n % 6 + 1]; }; // [red, white]
+  const diceHtml = ch => { const [r, w] = diceOf(ch); return '<div class="dice">' + dieSvg(r, true, 40) + dieSvg(w, false, 40) + '</div>'; };
+  // Key: a grid with a row for each red die and a column for each white die
+  function diceKey() {
+    let cells = '<div></div>';
+    for (let w = 1; w <= 6; w++) cells += '<div class="dk-head">' + dieSvg(w, false, 34) + '</div>';
+    for (let r = 1; r <= 5; r++) {
+      cells += '<div class="dk-head">' + dieSvg(r, true, 34) + '</div>';
+      for (let w = 1; w <= 6; w++) {
+        const ch = ALPHABET[(r - 1) * 6 + w - 1];
+        cells += ch ? '<div class="kitem"><span class="kl">' + ch + '</span></div>' : '<div></div>';
+      }
+    }
+    return '<div class="dknote">Find the red die\'s row and the white die\'s column.</div><div class="dicekey">' + cells + '</div>';
+  }
+
   const PHONE = [['2', 'abc'], ['3', 'def'], ['4', 'ghi'], ['5', 'jkl'], ['6', 'mno'], ['7', 'pqrs'], ['8', 'tuv'], ['9', 'wxyz']];
   const DIRS = ['↙', '↓', '↘', '⇓'];
   const phoneOf = {};
@@ -841,6 +873,11 @@ const decoder = (function () {
       name: 'Atbash cipher',
       symbol: ch => '<div class="at-l">' + ALPHABET[25 - ALPHABET.indexOf(ch)].toUpperCase() + '</div>',
       key: atbashKey,
+    },
+    dice: {
+      name: 'Dice code',
+      symbol: diceHtml,
+      key: diceKey,
     },
   };
 
