@@ -14,6 +14,14 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
 | `LMB-words-image/` | Photos of the 10 Seeing Stars source pages (Star Words 1–1000). Local only: left out of git by `.gitignore` because they are copyrighted. |
 
+## Code, hosting, and publishing
+
+- **Repo:** https://github.com/jessecollins62/spelling-games (public). This replaced the old Netlify uploads.
+- **Live site:** https://jessecollins62.github.io/spelling-games/ (GitHub Pages, served straight from the `main` branch; no build step). The worksheet is at `/print.html`.
+- **`main` = what's live.** Anything pushed to `main` goes live within a minute or two.
+- **Workflow:** make changes on a local branch (e.g. `dev`), test by opening `index.html` in a browser, then merge into `main` and push to publish.
+- `.gitignore` keeps `.DS_Store` and `LMB-words-image/` (copyrighted book photos) out of the repo.
+
 ## Word lists (`words.js`)
 
 `WORD_LISTS` is an array of `{ name, words }`. The **first list is the default** when the page loads. The picker shows lists in array order.
