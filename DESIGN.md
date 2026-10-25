@@ -115,7 +115,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
   - **Pigpen cipher**: grid and X shapes, with dots for the second half (SVG).
   - **Phone cipher**: keypad digit plus an arrow for which letter on that key (↙ ↓ ↘ ⇓ = 1st–4th).
   - **Atbash**: the reversed alphabet (a↔z, b↔y, ...).
-  - **Greek Square code** (a Polybius square, shown with dice): two dice per letter, a red die with white dots (the row) and a white die with black dots (the column). A–E are red 1 + white 1–5, F–J are red 2, and so on to U–Y on red 5. Z is red 6 + white 1. The key is the Greek square: a ruled 5×5 grid with white dice across the top and red dice down the side, plus a 6th row for Z (`dieSvg`, `diceOf`, `diceKey`; cipher id `greek`).
+  - **Greek Square code** (a standard Polybius square): each letter is shown as two numbers, row then column, like `1-1` for A, `2-2` for G, `5-5` for Z. The square is 5×5 with rows A–E, F–K, L–P, Q–U, V–Z. **I and J share 2-4**, so a J word still needs J typed; that's part of the spelling. The key is the square as a ruled grid with column numbers across the top and row numbers down the side, and the shared square labeled `i/j` (`SQUARE`, `greekOf`, `greekKey`; cipher id `greek`).
 - A key for the current cipher is shown below the puzzle.
 - The player **types** letters into the answer boxes. Backspace removes the last letter; tapping a box clears it.
 - Anything that isn't a letter a–z (the apostrophe in `don't`, `I'll`, ...) is **filled in already**: it shows in its place with no code symbol and no box. It is skipped when typing, and Backspace and tapping can't remove it (the `given` array).
@@ -141,7 +141,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - Every word on the list gets a row of cipher symbols with blank lines to write under. Ciphers are spread about evenly across the words.
 - Apostrophes (any non-letter) are printed in place instead of encoded, matching the game.
 - Page 2 ("KEYS") shows the key for each cipher used.
-- Black and white only: colored fills become outlines, red dice print as black dice with white dots, and Morse is drawn as SVG so it prints even when browsers skip background colors.
+- Black and white only: colored fills become outlines, and Morse is drawn as SVG so it prints even when browsers skip background colors.
 - On the KEYS page, the phone keypad and Greek square sit side by side so all five keys fit on one page.
 - The layout is two columns of ten rows, designed for 20-word lists. LMB lists (10 words) fill one column.
 
