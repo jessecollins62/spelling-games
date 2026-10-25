@@ -24,7 +24,7 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 ## Word lists (`words.js`)
 
-`WORD_LISTS` is an array of `{ name, words }`. The **first list is the default** when the page loads. The picker shows lists in array order.
+`WORD_LISTS` is an array of `{ name, words }`. The picker shows lists in array order. On load, the game page starts on the **last list used in this browser**; with none saved, it starts on **LMB 31** (see List picker below).
 
 Each word entry:
 
@@ -65,7 +65,8 @@ Order in the file:
    - `speak(text)` / `canSpeak`: browser text-to-speech (Web Speech API) at rate 0.85.
 4. **One script/module per game**. Each is an IIFE (`const curtain = (function () { ... })()`) that keeps its own state and returns `{ stop }`.
 5. **Tab switching**: the `GAMES` table maps each game to its tab button, panel, and `stop()`. Switching tabs calls `stop()` on every game you're leaving, which sends it back to its start screen.
-6. **List picker**: changing the list sets `WORDS` and calls `stop()` on every game.
+6. **List picker**: changing the list sets `WORDS`, saves the list's **name** in `localStorage` (key `spellingGames.list`), and calls `stop()` on every game. On load, the saved name is used if it matches a list; otherwise `DEFAULT_LIST` (`LMB 31`), or the first list if that's missing. Saving by name means adding or reordering lists doesn't change his choice. Storage reads and writes are wrapped in `try`, so a blocked-storage browser just falls back to the default. `print.html` has its own picker and doesn't use the saved list.
+7. **Arrow keys**: ↑/↓ move to the previous/next list whenever no round is being played (start and end screens). During a round they do nothing. Each `GAMES` entry's `round` field names its in-round panel, which is how the page tells.
 
 ### The game module pattern
 
@@ -154,6 +155,6 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 
 ## Adding a word list
 
-1. Add a `{ name, words: [...] }` entry to `WORD_LISTS` in `words.js`. Put it first if it should be the default.
+1. Add a `{ name, words: [...] }` entry to `WORD_LISTS` in `words.js`. To make it the default for browsers with nothing saved, change `DEFAULT_LIST` in `index.html`.
 2. For all four games, give each word `decoys`, `meaning`, and `lookalikes`. For a quick list, use `decoys: fd("word")` and skip the rest (Blaster won't be available).
 3. Reload `index.html`; the new list appears in the picker.

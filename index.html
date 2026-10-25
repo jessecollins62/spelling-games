@@ -1316,10 +1316,11 @@ const blaster = (function () {
 
 // ===== Switching between the games =====
 const GAMES = {
-  curtain:  { tab: 'tabCurtain',  panel: 'curtainGame',  stop: () => curtain.stop() },
-  scramble: { tab: 'tabScramble', panel: 'scrambleGame', stop: () => scramble.stop() },
-  decode:   { tab: 'tabDecode',   panel: 'decodeGame',   stop: () => decoder.stop() },
-  blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  stop: () => blaster.stop() },
+  // round = the panel shown while a round is being played
+  curtain:  { tab: 'tabCurtain',  panel: 'curtainGame',  round: 'game',   stop: () => curtain.stop() },
+  scramble: { tab: 'tabScramble', panel: 'scrambleGame', round: 'scGame', stop: () => scramble.stop() },
+  decode:   { tab: 'tabDecode',   panel: 'decodeGame',   round: 'dcGame', stop: () => decoder.stop() },
+  blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  round: 'blGame', stop: () => blaster.stop() },
 };
 function showTab(which) {
   for (const [name, g] of Object.entries(GAMES)) {
@@ -1333,11 +1334,37 @@ function showTab(which) {
 for (const [name, g] of Object.entries(GAMES)) $(g.tab).onclick = () => showTab(name);
 
 // ===== Choosing the word list =====
+// The last list used is remembered in this browser (by name, so adding lists doesn't change it).
+// With nothing saved yet, start on LMB 31.
+const LIST_KEY = 'spellingGames.list', DEFAULT_LIST = 'LMB 31';
+const listIndex = name => WORD_LISTS.findIndex(l => l.name === name);
+let saved = null;
+try { saved = localStorage.getItem(LIST_KEY); } catch (e) {} // storage can be blocked (e.g. private windows)
+let startList = listIndex(saved);
+if (startList < 0) startList = Math.max(0, listIndex(DEFAULT_LIST));
+
 WORD_LISTS.forEach((l, i) => $('listPick').add(new Option(l.name, i)));
+$('listPick').value = startList;
+WORDS = WORD_LISTS[startList].words;
 $('listPick').onchange = () => {
-  WORDS = WORD_LISTS[$('listPick').value].words;
+  const list = WORD_LISTS[$('listPick').value];
+  WORDS = list.words;
+  try { localStorage.setItem(LIST_KEY, list.name); } catch (e) {}
   for (const g of Object.values(GAMES)) g.stop();
 };
+
+// Up/down arrows move through the word lists, except while a round is being played
+window.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (Object.values(GAMES).some(g => $(g.round).offsetParent !== null)) return;
+  e.preventDefault(); // no page scrolling, and no double move when the menu itself has focus
+  const pick = $('listPick');
+  const next = Math.min(WORD_LISTS.length - 1, Math.max(0, +pick.value + (e.key === 'ArrowDown' ? 1 : -1)));
+  if (next === +pick.value) return;
+  pick.value = next;
+  pick.onchange();
+});
 </script>
 </body>
 </html>
