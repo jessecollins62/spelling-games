@@ -42,7 +42,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **Long E list** and **Long A list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all five games.
+1. **Long E list**, **Long A list**, and **Long O list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all five games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
