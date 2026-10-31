@@ -410,7 +410,7 @@
   <div id="wordguessGame" class="mode" style="display:none">
     <div id="wgStart">
       <p style="font-size:1.4rem">Guess the secret word! It's always a word from your spelling list.<br>
-        Type any real word, short or long, and press Enter. Keep guessing until you find it!</p>
+        Type any letters, short or long, and press Enter. Keep guessing until you find it!</p>
       <div class="wg-legend">
         <div><span class="wg-tile right">a</span>Right letter in the right spot</div>
         <div><span class="wg-tile near">a</span>In the word, but in a different spot</div>
@@ -1848,33 +1848,6 @@ const wordGuess = (function () {
   const panels = ['wgStart', 'wgGame', 'wgEnd'];
   const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
 
-  // --- Real-word check. dictionary.js is big, so it loads the first time this tab is opened. ---
-  let dict = null, dictStatus = 'idle', pending = false; // pending: Enter was pressed while it was still loading
-  function loadDictionary() {
-    if (dictStatus !== 'idle') return;
-    dictStatus = 'loading';
-    const s = document.createElement('script');
-    s.src = 'dictionary.js';
-    s.onload = () => {
-      dict = new Set(DICTIONARY.split('\n'));
-      dictStatus = 'ready';
-      if (pending) { pending = false; submit(); }
-    };
-    s.onerror = () => { // offline or missing: accept any guess rather than block the game
-      dictStatus = 'failed';
-      if (pending) { pending = false; submit(); }
-    };
-    document.head.appendChild(s);
-  }
-  let listWords = null; // every word on every list counts as real (Easter, I, a, ...)
-  function isWord(w) {
-    if (!listWords) {
-      listWords = new Set();
-      WORD_LISTS.forEach(l => l.words.forEach(x => listWords.add(x.word.toLowerCase())));
-    }
-    return listWords.has(w) || (dict ? dict.has(w) : dictStatus === 'failed');
-  }
-
   // Green = right letter, right spot. Yellow = in the word somewhere else. Grey = not in the word.
   // A letter is only marked as many times as it is in the secret word, greens first.
   function mark(guess, secret) {
@@ -1907,7 +1880,6 @@ const wordGuess = (function () {
   let words, idx, current, guesses, guess, found, clues, over, results, running = false;
 
   function newGame() {
-    loadDictionary();
     // letters-only words; ones with an apostrophe (don't) are left out
     words = shuffle(WORDS.map(w => w.word.toLowerCase()).filter(w => /^[a-z]+$/.test(w)));
     if (!words.length) { $('wgNone').textContent = 'This list has no words this game can use.'; return; }
@@ -1920,7 +1892,6 @@ const wordGuess = (function () {
 
   function stop() {
     running = false;
-    pending = false;
     show('wgStart');
   }
 
@@ -1996,12 +1967,7 @@ const wordGuess = (function () {
     if (!running) return;
     if (over) return next();
     if (!guess) return;
-    if (!isWord(guess)) {
-      if (dictStatus === 'loading') { pending = true; say('Checking the word...'); return; }
-      shake();
-      say('"' + guess + '" isn\'t in my dictionary. Try another word!');
-      return;
-    }
+    // any letters count as a guess; they don't have to make a real word
     if (guesses.some(g => g.word === guess)) { shake(); say('You already tried "' + guess + '"!'); return; }
 
     const marks = mark(guess, current);
@@ -2079,7 +2045,7 @@ const wordGuess = (function () {
   $('wgNext').onclick = e => { e.currentTarget.blur(); next(); };
   show('wgStart');
 
-  return { stop, loadDictionary };
+  return { stop };
 })();
 
 // ===== Switching between the games =====
@@ -2100,7 +2066,6 @@ function showTab(which) {
     // leaving a round in progress sends that game back to its start screen
     if (!on && g.stop) g.stop();
   }
-  if (which === 'wordguess') wordGuess.loadDictionary(); // start loading it before Start is pressed
 }
 for (const [name, g] of Object.entries(GAMES)) $(g.tab).onclick = () => showTab(name);
 

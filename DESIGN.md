@@ -11,7 +11,6 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 | `index.html` | The whole app: styles, the six games, tab switching, and the word-list picker. One file, roughly 2,100 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
-| `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list) that Word Guess uses to check that a guess is a real word. Big (1.7 MB), so `index.html` loads it only when Word Guess is opened. |
 | `print.html` | A printable black-and-white "DECODE" worksheet (Code Breaker on paper) for any list, plus a page of cipher keys. |
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
 | `LMB-words-image/` | Photos of the 10 Seeing Stars source pages (Star Words 1–1000). Local only: left out of git by `.gitignore` because they are copyrighted. |
@@ -160,7 +159,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 ### 🟩 Word Guess: find the secret word
 
 - A guessing game in the style of Mastermind. The secret word is a word from the active list, shown as one empty box per letter ("Secret word: 5 letters"). Words in random order, the whole list. Words with an apostrophe (`don't`) are left out.
-- The player types **any real word** of any length (up to 15 letters, `MAX_LEN`), shorter or longer than the secret word, and presses **Enter**. Typing works on the keyboard or by tapping the **Letters** panel on the right (with ⌫ Delete and Enter ✓ buttons), so it also works on a tablet.
+- The player types **any letters** (they don't have to make a real word) of any length (up to 15 letters, `MAX_LEN`), shorter or longer than the secret word, and presses **Enter**. Typing works on the keyboard or by tapping the **Letters** panel on the right (with ⌫ Delete and Enter ✓ buttons), so it also works on a tablet.
 - Each guess stays on the board with its letters colored (`mark`):
   - **Green**: the right letter in the right spot.
   - **Yellow**: in the word, but in a different spot.
@@ -169,11 +168,9 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - A green letter also fills in that box of the secret word.
 - **💡 Clue** fills in one more secret box, picked at random from the boxes not found yet. Up to 2 per word (`MAX_CLUES`). It greys out when no clues are left, or when only one box is still empty (so a clue never gives away the whole word). Clue boxes look the same as boxes found with a green.
 - In the Letters panel, letters already guessed that aren't in the word at all are greyed out. They can still be typed.
-- Unlimited guesses. A guess that isn't a real word, or that was already tried, shakes and doesn't count.
+- Unlimited guesses. A guess that was already tried shakes and doesn't count.
 - When the word is found, the message says how many guesses it took and the word is spoken. **Next word ➜** (or Enter) moves on. **🏳️ Show me the word** gives up: it reveals the word and adds it to "Words to practice".
 - No points. The end screen shows how many words were found, the number of guesses for each (and clues used, if any), and words to practice.
-- **Real-word check:** `dictionary.js` holds the public-domain ENABLE word list (172,823 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages). It is loaded only when the Word Guess tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). Every word on every list also counts as real, which covers names like `Easter`, contractions, `I`, and `a`. If the file can't load (offline), every guess is accepted. A guess made while it is still loading is checked when it finishes.
-
 
 ## Printable worksheet (`print.html`)
 
