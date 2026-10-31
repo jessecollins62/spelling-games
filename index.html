@@ -224,6 +224,8 @@
   #wgMsg { font-size: 1.4rem; min-height: 1.6em; margin-top: 8px; }
   #wgButtons button { font-size: 1.1rem; padding: 8px 18px; margin: 6px; }
   #wgGiveUp { background: #8ec5ff; box-shadow: 0 5px 0 #3f7fc0; }
+  #wgClue { background: #b9f2a6; box-shadow: 0 5px 0 #5ea84a; }
+  #wgButtons button:disabled { opacity: .4; cursor: default; transform: none; }
   #wgLetters { background: rgba(0,0,0,.25); border-radius: 18px; padding: 14px; }
   #wgLetters h3 { color: #ffd84a; margin: 0 0 10px; font-size: 1.2rem; }
   #wgKeys { display: grid; grid-template-columns: repeat(4, 54px); gap: 8px; touch-action: manipulation; }
@@ -429,7 +431,7 @@
           <div id="wgHistory"></div>
           <div id="wgInput" class="wg-row"></div>
           <div id="wgMsg"></div>
-          <div id="wgButtons"><button id="wgGiveUp">🏳️ Show me the word</button><button id="wgNext">Next word ➜</button></div>
+          <div id="wgButtons"><button id="wgClue"></button><button id="wgGiveUp">🏳️ Show me the word</button><button id="wgNext">Next word ➜</button></div>
         </div>
         <div id="wgLetters">
           <h3>Letters</h3>
@@ -1901,7 +1903,8 @@ const wordGuess = (function () {
   $('wgEnter').addEventListener('pointerdown', e => { e.preventDefault(); submit(); });
 
   // --- Game ---
-  let words, idx, current, guesses, guess, found, over, results, running = false;
+  const MAX_CLUES = 2; // clues per word
+  let words, idx, current, guesses, guess, found, clues, over, results, running = false;
 
   function newGame() {
     loadDictionary();
@@ -1923,13 +1926,14 @@ const wordGuess = (function () {
 
   function startRound() {
     current = words[idx];
-    guesses = []; guess = ''; over = false;
-    found = [...current].map(() => false); // secret boxes filled in by a green
+    guesses = []; guess = ''; clues = 0; over = false;
+    found = [...current].map(() => false); // secret boxes filled in by a green or a clue
     $('wgNum').textContent = idx + 1;
     $('wgSecretLabel').textContent = 'Secret word: ' + current.length + (current.length === 1 ? ' letter' : ' letters');
     $('wgMsg').textContent = '';
     $('wgHistory').innerHTML = '';
     $('wgGiveUp').style.display = '';
+    $('wgClue').style.display = '';
     $('wgNext').style.display = 'none';
     render();
   }
@@ -1945,6 +1949,20 @@ const wordGuess = (function () {
     const out = new Set();
     guesses.forEach(g => [...g.word].forEach(ch => { if (!current.includes(ch)) out.add(ch); }));
     for (const ch of ALPHABET) keys[ch].classList.toggle('out', out.has(ch));
+    const left = MAX_CLUES - clues;
+    $('wgClue').textContent = '💡 Clue (' + left + ' left)';
+    $('wgClue').disabled = over || left === 0 || found.filter(f => !f).length <= 1;
+  }
+
+  // A clue fills in one secret box that isn't found yet, picked at random.
+  // Up to MAX_CLUES per word, and never the last empty box.
+  function clue() {
+    if (!running || over || clues >= MAX_CLUES) return;
+    const empty = found.map((f, i) => f ? -1 : i).filter(i => i >= 0);
+    if (empty.length <= 1) return;
+    found[empty[Math.floor(Math.random() * empty.length)]] = true;
+    clues++;
+    render();
   }
 
   function say(text) {
@@ -2004,8 +2022,9 @@ const wordGuess = (function () {
 
   function endRound(gaveUp) {
     over = true;
-    results.push({ word: current, tries: guesses.length, gaveUp });
+    results.push({ word: current, tries: guesses.length, clues, gaveUp });
     $('wgGiveUp').style.display = 'none';
+    $('wgClue').style.display = 'none';
     $('wgNext').style.display = '';
     $('wgNext').textContent = idx === words.length - 1 ? 'See how you did ➜' : 'Next word ➜';
     render();
@@ -2041,7 +2060,8 @@ const wordGuess = (function () {
     $('wgFound').textContent = '🎉 You found ' + solved.length + ' of ' + results.length + ' words! 🎉';
     const missed = results.filter(r => r.gaveUp).map(r => r.word);
     $('wgSummary').innerHTML =
-      (solved.length ? 'Guesses: ' + solved.map(r => r.word + ' <b>' + r.tries + '</b>').join(', ') + '<br>' : '') +
+      (solved.length ? 'Guesses: ' + solved.map(r => r.word + ' <b>' + r.tries + '</b>' +
+        (r.clues ? ' (' + r.clues + (r.clues === 1 ? ' clue)' : ' clues)') : '')).join(', ') + '<br>' : '') +
       (missed.length ? 'Words to practice: <b>' + missed.join(', ') + '</b>' : '⭐ You found every word! ⭐');
   }
 
@@ -2054,6 +2074,7 @@ const wordGuess = (function () {
 
   $('wgGo').onclick = e => { e.currentTarget.blur(); newGame(); };
   $('wgAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('wgClue').onclick = e => { e.currentTarget.blur(); clue(); };
   $('wgGiveUp').onclick = e => { e.currentTarget.blur(); giveUp(); };
   $('wgNext').onclick = e => { e.currentTarget.blur(); next(); };
   show('wgStart');

@@ -167,10 +167,11 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
   - **Grey**: not in the word.
   - A letter is only colored as many times as it is in the secret word. Greens are counted first, then yellows left to right, so with `globe` the guess `geese` shows only its last `e` as green.
 - A green letter also fills in that box of the secret word.
+- **💡 Clue** fills in one more secret box, picked at random from the boxes not found yet. Up to 2 per word (`MAX_CLUES`). It greys out when no clues are left, or when only one box is still empty (so a clue never gives away the whole word). Clue boxes look the same as boxes found with a green.
 - In the Letters panel, letters already guessed that aren't in the word at all are greyed out. They can still be typed.
 - Unlimited guesses. A guess that isn't a real word, or that was already tried, shakes and doesn't count.
 - When the word is found, the message says how many guesses it took and the word is spoken. **Next word ➜** (or Enter) moves on. **🏳️ Show me the word** gives up: it reveals the word and adds it to "Words to practice".
-- No points. The end screen shows how many words were found, the number of guesses for each, and words to practice.
+- No points. The end screen shows how many words were found, the number of guesses for each (and clues used, if any), and words to practice.
 - **Real-word check:** `dictionary.js` holds the public-domain ENABLE word list (172,823 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages). It is loaded only when the Word Guess tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). Every word on every list also counts as real, which covers names like `Easter`, contractions, `I`, and `a`. If the file can't load (offline), every guess is accepted. A guess made while it is still loading is checked when it finishes.
 
 
