@@ -195,6 +195,46 @@
   #cwClues li.solved { color: #8fe0a3; }
   #cwClues li.solved::after { content: ' ✓'; }
   #cwMsg { font-size: 1.4rem; min-height: 1.6em; margin-top: 12px; }
+  /* word guess */
+  #wordguessGame { max-width: 1100px; }
+  #wordguessGame.mode > div { width: 100%; text-align: center; }
+  #wgGame, #wgEnd { display: none; }
+  #wgEnd .score { font-size: 3rem; color: #ffd84a; margin: 10px 0; }
+  .wg-legend { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 1.3rem; margin: 0 0 20px; }
+  .wg-legend .wg-tile { width: 40px; height: 40px; font-size: 1.5rem; display: inline-flex; vertical-align: middle; margin-right: 8px; }
+  #wgMain { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; align-items: flex-start; }
+  #wgBoard { flex: 1 1 480px; max-width: 760px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #wgSecretLabel { font-size: 1.1rem; opacity: .85; }
+  #wgSecret { margin-bottom: 12px; }
+  .wg-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .wg-tile {
+    width: 50px; height: 50px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.9rem; font-weight: bold; user-select: none;
+  }
+  #wgSecret .wg-tile { width: 60px; height: 60px; font-size: 2.3rem; border: 3px solid #ffd84a; background: rgba(0,0,0,.3); }
+  #wgSecret .wg-tile.right { border-color: #2f9e4f; }
+  #wgSecret .wg-tile.shown { background: #fff6d0; color: #3a2400; }
+  .wg-tile.typed { background: #fff6d0; color: #3a2400; }
+  .wg-tile.cursor { border: 3px dashed #ffd84a; background: rgba(255,216,74,.08); }
+  .wg-tile.right { background: #4cbb5e; color: #fff; }
+  .wg-tile.near { background: #f5c518; color: #3a2400; }
+  .wg-tile.absent { background: #6e6787; color: #e6e1f5; }
+  #wgInput.wrong { animation: shake 0.4s; }
+  #wgInput.wrong .wg-tile.typed { background: #ffb3b3; }
+  #wgMsg { font-size: 1.4rem; min-height: 1.6em; margin-top: 8px; }
+  #wgButtons button { font-size: 1.1rem; padding: 8px 18px; margin: 6px; }
+  #wgGiveUp { background: #8ec5ff; box-shadow: 0 5px 0 #3f7fc0; }
+  #wgLetters { background: rgba(0,0,0,.25); border-radius: 18px; padding: 14px; }
+  #wgLetters h3 { color: #ffd84a; margin: 0 0 10px; font-size: 1.2rem; }
+  #wgKeys { display: grid; grid-template-columns: repeat(4, 54px); gap: 8px; touch-action: manipulation; }
+  #wgKeys button, #wgKeyBar button {
+    padding: 0; height: 54px; font-size: 1.7rem; border-radius: 10px;
+    background: #fff3c4; color: #3a2400; box-shadow: 0 4px 0 #b88f00;
+  }
+  #wgKeys button.out { background: #4a4260; color: #8a83a3; box-shadow: 0 4px 0 #2a2440; }
+  #wgKeyBar { display: flex; gap: 8px; margin-top: 12px; touch-action: manipulation; }
+  #wgKeyBar button { flex: 1; font-size: 1.1rem; }
+  #wgKeyBar #wgEnter { background: #ffd84a; }
 </style>
 </head>
 <body>
@@ -206,6 +246,7 @@
     <button id="tabDecode">🔐 Code Breaker</button>
     <button id="tabBlaster">☄️ Blaster</button>
     <button id="tabCrossword">✏️ Crossword</button>
+    <button id="tabWordGuess">🟩 Word Guess</button>
   </div>
   <div id="listBar"><label>Word list: <select id="listPick"></select></label></div>
 
@@ -361,6 +402,47 @@
       <div id="cwOutOf" style="font-size:1.3rem; margin-bottom:8px"></div>
       <div id="cwMissed" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
       <button id="cwAgain">🔄 New puzzle</button>
+    </div>
+  </div>
+
+  <div id="wordguessGame" class="mode" style="display:none">
+    <div id="wgStart">
+      <p style="font-size:1.4rem">Guess the secret word! It's always a word from your spelling list.<br>
+        Type any real word, short or long, and press Enter. Keep guessing until you find it!</p>
+      <div class="wg-legend">
+        <div><span class="wg-tile right">a</span>Right letter in the right spot</div>
+        <div><span class="wg-tile near">a</span>In the word, but in a different spot</div>
+        <div><span class="wg-tile absent">a</span>Not in the word</div>
+      </div>
+      <div id="wgNone" style="color:#ff9b9b; margin-bottom:12px"></div>
+      <div><button id="wgGo">Start!</button></div>
+    </div>
+    <div id="wgGame">
+      <div class="hud">
+        <div>Word <b id="wgNum">1</b> / <b id="wgTotal">20</b></div>
+        <div>Guesses <b id="wgCount">0</b></div>
+      </div>
+      <div id="wgMain">
+        <div id="wgBoard">
+          <div id="wgSecretLabel"></div>
+          <div id="wgSecret" class="wg-row"></div>
+          <div id="wgHistory"></div>
+          <div id="wgInput" class="wg-row"></div>
+          <div id="wgMsg"></div>
+          <div id="wgButtons"><button id="wgGiveUp">🏳️ Show me the word</button><button id="wgNext">Next word ➜</button></div>
+        </div>
+        <div id="wgLetters">
+          <h3>Letters</h3>
+          <div id="wgKeys"></div>
+          <div id="wgKeyBar"><button id="wgDel">⌫ Delete</button><button id="wgEnter">Enter ✓</button></div>
+        </div>
+      </div>
+    </div>
+    <div id="wgEnd">
+      <h2>All done!</h2>
+      <div class="score" id="wgFound"></div>
+      <div id="wgSummary" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
+      <button id="wgAgain">🔄 Restart</button>
     </div>
   </div>
 
@@ -1757,6 +1839,228 @@ const crossword = (function () {
   return { stop };
 })();
 
+// ===== Word guess =====
+const wordGuess = (function () {
+  const MAX_LEN = 15; // longest guess that can be typed
+  const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+  const panels = ['wgStart', 'wgGame', 'wgEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+
+  // --- Real-word check. dictionary.js is big, so it loads the first time this tab is opened. ---
+  let dict = null, dictStatus = 'idle', pending = false; // pending: Enter was pressed while it was still loading
+  function loadDictionary() {
+    if (dictStatus !== 'idle') return;
+    dictStatus = 'loading';
+    const s = document.createElement('script');
+    s.src = 'dictionary.js';
+    s.onload = () => {
+      dict = new Set(DICTIONARY.split('\n'));
+      dictStatus = 'ready';
+      if (pending) { pending = false; submit(); }
+    };
+    s.onerror = () => { // offline or missing: accept any guess rather than block the game
+      dictStatus = 'failed';
+      if (pending) { pending = false; submit(); }
+    };
+    document.head.appendChild(s);
+  }
+  let listWords = null; // every word on every list counts as real (Easter, I, a, ...)
+  function isWord(w) {
+    if (!listWords) {
+      listWords = new Set();
+      WORD_LISTS.forEach(l => l.words.forEach(x => listWords.add(x.word.toLowerCase())));
+    }
+    return listWords.has(w) || (dict ? dict.has(w) : dictStatus === 'failed');
+  }
+
+  // Green = right letter, right spot. Yellow = in the word somewhere else. Grey = not in the word.
+  // A letter is only marked as many times as it is in the secret word, greens first.
+  function mark(guess, secret) {
+    const marks = [...guess].map(() => 'absent');
+    const left = {}; // secret letters not matched by a green
+    for (let i = 0; i < secret.length; i++) {
+      if (guess[i] === secret[i]) marks[i] = 'right';
+      else left[secret[i]] = (left[secret[i]] || 0) + 1;
+    }
+    for (let i = 0; i < guess.length; i++) {
+      if (marks[i] !== 'right' && left[guess[i]] > 0) { marks[i] = 'near'; left[guess[i]]--; }
+    }
+    return marks;
+  }
+
+  // --- On-screen letters ---
+  const keys = {};
+  for (const ch of ALPHABET) {
+    const b = document.createElement('button');
+    b.textContent = ch;
+    b.addEventListener('pointerdown', e => { e.preventDefault(); typeLetter(ch); });
+    keys[ch] = b;
+    $('wgKeys').appendChild(b);
+  }
+  $('wgDel').addEventListener('pointerdown', e => { e.preventDefault(); backspace(); });
+  $('wgEnter').addEventListener('pointerdown', e => { e.preventDefault(); submit(); });
+
+  // --- Game ---
+  let words, idx, current, guesses, guess, found, over, results, running = false;
+
+  function newGame() {
+    loadDictionary();
+    // letters-only words; ones with an apostrophe (don't) are left out
+    words = shuffle(WORDS.map(w => w.word.toLowerCase()).filter(w => /^[a-z]+$/.test(w)));
+    if (!words.length) { $('wgNone').textContent = 'This list has no words this game can use.'; return; }
+    $('wgNone').textContent = '';
+    idx = 0; results = []; running = true;
+    $('wgTotal').textContent = words.length;
+    show('wgGame');
+    startRound();
+  }
+
+  function stop() {
+    running = false;
+    pending = false;
+    show('wgStart');
+  }
+
+  function startRound() {
+    current = words[idx];
+    guesses = []; guess = ''; over = false;
+    found = [...current].map(() => false); // secret boxes filled in by a green
+    $('wgNum').textContent = idx + 1;
+    $('wgSecretLabel').textContent = 'Secret word: ' + current.length + (current.length === 1 ? ' letter' : ' letters');
+    $('wgMsg').textContent = '';
+    $('wgHistory').innerHTML = '';
+    $('wgGiveUp').style.display = '';
+    $('wgNext').style.display = 'none';
+    render();
+  }
+
+  const tile = (ch, cls) => '<div class="wg-tile ' + cls + '">' + ch + '</div>';
+
+  function render() {
+    $('wgCount').textContent = guesses.length;
+    $('wgSecret').innerHTML = [...current].map((ch, i) =>
+      found[i] ? tile(ch, 'right') : over ? tile(ch, 'shown') : tile('', '')).join('');
+    $('wgInput').innerHTML = over ? '' :
+      [...guess].map(ch => tile(ch, 'typed')).join('') + (guess.length < MAX_LEN ? tile('', 'cursor') : '');
+    const out = new Set();
+    guesses.forEach(g => [...g.word].forEach(ch => { if (!current.includes(ch)) out.add(ch); }));
+    for (const ch of ALPHABET) keys[ch].classList.toggle('out', out.has(ch));
+  }
+
+  function say(text) {
+    $('wgMsg').textContent = text;
+  }
+
+  function typeLetter(ch) {
+    if (!running || over || guess.length >= MAX_LEN) return;
+    guess += ch;
+    $('wgInput').classList.remove('wrong');
+    say('');
+    render();
+  }
+
+  function backspace() {
+    if (!running || over || !guess) return;
+    guess = guess.slice(0, -1);
+    $('wgInput').classList.remove('wrong');
+    say('');
+    render();
+  }
+
+  function shake() {
+    const el = $('wgInput');
+    el.classList.remove('wrong');
+    void el.offsetWidth; // restart the shake animation
+    el.classList.add('wrong');
+  }
+
+  function submit() {
+    if (!running) return;
+    if (over) return next();
+    if (!guess) return;
+    if (!isWord(guess)) {
+      if (dictStatus === 'loading') { pending = true; say('Checking the word...'); return; }
+      shake();
+      say('"' + guess + '" isn\'t in my dictionary. Try another word!');
+      return;
+    }
+    if (guesses.some(g => g.word === guess)) { shake(); say('You already tried "' + guess + '"!'); return; }
+
+    const marks = mark(guess, current);
+    marks.forEach((m, i) => { if (m === 'right') found[i] = true; });
+    guesses.push({ word: guess, marks });
+    const row = document.createElement('div');
+    row.className = 'wg-row';
+    row.style.marginBottom = '6px';
+    row.innerHTML = [...guess].map((ch, i) => tile(ch, marks[i])).join('');
+    $('wgHistory').appendChild(row);
+    const won = guess === current;
+    guess = '';
+    say('');
+    if (won) return win();
+    render();
+    $('wgInput').scrollIntoView({ block: 'nearest' });
+  }
+
+  function endRound(gaveUp) {
+    over = true;
+    results.push({ word: current, tries: guesses.length, gaveUp });
+    $('wgGiveUp').style.display = 'none';
+    $('wgNext').style.display = '';
+    $('wgNext').textContent = idx === words.length - 1 ? 'See how you did ➜' : 'Next word ➜';
+    render();
+    $('wgNext').scrollIntoView({ block: 'nearest' });
+  }
+
+  function win() {
+    found = found.map(() => true);
+    const n = guesses.length;
+    say(n === 1 ? '🎉 You got it on the first try! 🎉' : '🎉 You got it in ' + n + ' guesses! 🎉');
+    speak(current);
+    endRound(false);
+  }
+
+  function giveUp() {
+    if (!running || over) return;
+    say('The word was "' + current + '". You\'ll get the next one!');
+    speak(current);
+    endRound(true);
+  }
+
+  function next() {
+    if (!running || !over) return;
+    idx++;
+    if (idx >= words.length) finish();
+    else startRound();
+  }
+
+  function finish() {
+    running = false;
+    show('wgEnd');
+    const solved = results.filter(r => !r.gaveUp);
+    $('wgFound').textContent = '🎉 You found ' + solved.length + ' of ' + results.length + ' words! 🎉';
+    const missed = results.filter(r => r.gaveUp).map(r => r.word);
+    $('wgSummary').innerHTML =
+      (solved.length ? 'Guesses: ' + solved.map(r => r.word + ' <b>' + r.tries + '</b>').join(', ') + '<br>' : '') +
+      (missed.length ? 'Words to practice: <b>' + missed.join(', ') + '</b>' : '⭐ You found every word! ⭐');
+  }
+
+  window.addEventListener('keydown', e => {
+    if (!running || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat) submit(); }
+    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); backspace(); }
+    else if (/^[a-z]$/i.test(e.key)) typeLetter(e.key.toLowerCase());
+  });
+
+  $('wgGo').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('wgAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('wgGiveUp').onclick = e => { e.currentTarget.blur(); giveUp(); };
+  $('wgNext').onclick = e => { e.currentTarget.blur(); next(); };
+  show('wgStart');
+
+  return { stop, loadDictionary };
+})();
+
 // ===== Switching between the games =====
 const GAMES = {
   // round = the panel shown while a round is being played
@@ -1765,6 +2069,7 @@ const GAMES = {
   decode:   { tab: 'tabDecode',   panel: 'decodeGame',   round: 'dcGame', stop: () => decoder.stop() },
   blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  round: 'blGame', stop: () => blaster.stop() },
   crossword: { tab: 'tabCrossword', panel: 'crosswordGame', round: 'cwGame', stop: () => crossword.stop() },
+  wordguess: { tab: 'tabWordGuess', panel: 'wordguessGame', round: 'wgGame', stop: () => wordGuess.stop() },
 };
 function showTab(which) {
   for (const [name, g] of Object.entries(GAMES)) {
@@ -1774,6 +2079,7 @@ function showTab(which) {
     // leaving a round in progress sends that game back to its start screen
     if (!on && g.stop) g.stop();
   }
+  if (which === 'wordguess') wordGuess.loadDictionary(); // start loading it before Start is pressed
 }
 for (const [name, g] of Object.entries(GAMES)) $(g.tab).onclick = () => showTab(name);
 

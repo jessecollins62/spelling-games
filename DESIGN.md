@@ -8,9 +8,10 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the five games, tab switching, and the word-list picker. One file, roughly 1,900 lines. |
+| `index.html` | The whole app: styles, the six games, tab switching, and the word-list picker. One file, roughly 2,100 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
+| `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list) that Word Guess uses to check that a guess is a real word. Big (1.7 MB), so `index.html` loads it only when Word Guess is opened. |
 | `print.html` | A printable black-and-white "DECODE" worksheet (Code Breaker on paper) for any list, plus a page of cipher keys. |
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
 | `LMB-words-image/` | Photos of the 10 Seeing Stars source pages (Star Words 1–1000). Local only: left out of git by `.gitignore` because they are copyrighted. |
@@ -42,7 +43,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **Long E list**, **Long A list**, and **Long O list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all five games.
+1. **Long E list**, **Long A list**, and **Long O list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all six games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
@@ -60,7 +61,7 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`). Each game has three panels: start, in-game, and end.
+2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`). Each game has three panels: start, in-game, and end.
 3. **`words.js`** and **`meanings.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
@@ -156,6 +157,23 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
   - Building takes about 20 ms per puzzle.
 - Squares are 28–46 px depending on puzzle size; the clue lists sit beside the grid on wide screens and below it on narrow ones.
 
+### 🟩 Word Guess: find the secret word
+
+- A guessing game in the style of Mastermind. The secret word is a word from the active list, shown as one empty box per letter ("Secret word: 5 letters"). Words in random order, the whole list. Words with an apostrophe (`don't`) are left out.
+- The player types **any real word** of any length (up to 15 letters, `MAX_LEN`), shorter or longer than the secret word, and presses **Enter**. Typing works on the keyboard or by tapping the **Letters** panel on the right (with ⌫ Delete and Enter ✓ buttons), so it also works on a tablet.
+- Each guess stays on the board with its letters colored (`mark`):
+  - **Green**: the right letter in the right spot.
+  - **Yellow**: in the word, but in a different spot.
+  - **Grey**: not in the word.
+  - A letter is only colored as many times as it is in the secret word. Greens are counted first, then yellows left to right, so with `globe` the guess `geese` shows only its last `e` as green.
+- A green letter also fills in that box of the secret word.
+- In the Letters panel, letters already guessed that aren't in the word at all are greyed out. They can still be typed.
+- Unlimited guesses. A guess that isn't a real word, or that was already tried, shakes and doesn't count.
+- When the word is found, the message says how many guesses it took and the word is spoken. **Next word ➜** (or Enter) moves on. **🏳️ Show me the word** gives up: it reveals the word and adds it to "Words to practice".
+- No points. The end screen shows how many words were found, the number of guesses for each, and words to practice.
+- **Real-word check:** `dictionary.js` holds the public-domain ENABLE word list (172,823 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages). It is loaded only when the Word Guess tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). Every word on every list also counts as real, which covers names like `Easter`, contractions, `I`, and `a`. If the file can't load (offline), every guess is accepted. A guess made while it is still loading is checked when it finishes.
+
+
 ## Printable worksheet (`print.html`)
 
 - Title "DECODE". Pick a list, then **Shuffle again** or **Print**.
@@ -172,11 +190,11 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - **High scores reset on reload** (in memory only).
 - **`fd()` decoys are weak** for very short words and sometimes make real words.
 - **Blaster doesn't work with LMB lists** (they have meanings now, but no lookalikes).
-- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet.
+- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess has one).
 - **Cipher code is duplicated** between `index.html` and `print.html`.
 
 ## Adding a word list
 
 1. Add a `{ name, words: [...] }` entry to `WORD_LISTS` in `words.js`. To make it the default for browsers with nothing saved, change `DEFAULT_LIST` in `index.html`.
-2. For all five games, give each word `decoys`, `meaning`, and `lookalikes`. For a quick list, use `decoys: fd("word")` and put meanings in `meanings.js` (Crossword then works; Blaster won't be available without lookalikes).
+2. For all the games, give each word `decoys`, `meaning`, and `lookalikes`. For a quick list, use `decoys: fd("word")` and put meanings in `meanings.js` (Crossword then works; Blaster won't be available without lookalikes).
 3. Reload `index.html`; the new list appears in the picker.
