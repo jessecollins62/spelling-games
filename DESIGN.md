@@ -118,7 +118,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
   - **Pigpen cipher**: grid and X shapes, with dots for the second half (SVG).
   - **Phone cipher**: keypad digit plus an arrow for which letter on that key (↙ ↓ ↘ ⇓ = 1st–4th).
   - **Atbash**: the reversed alphabet (a↔z, b↔y, ...).
-  - **Greek Square code** (a standard Polybius square): each letter is shown as two numbers, row then column, like `1-1` for A, `2-2` for G, `5-5` for Z. The square is 5×5 with rows A–E, F–K, L–P, Q–U, V–Z. **I and J share 2-4**, so a J word still needs J typed; that's part of the spelling. The key is the square as a ruled grid with column numbers across the top and row numbers down the side, and the shared square labeled `i/j` (`SQUARE`, `greekOf`, `greekKey`; cipher id `greek`).
+  - **Greek Square code** (a standard Polybius square): each letter is shown as two numbers, row then column, like `11` for A, `22` for G, `55` for Z. The square is 5×5 with rows A–E, F–K, L–P, Q–U, V–Z. **I and J share 2-4**, so a J word still needs J typed; that's part of the spelling. The key is the square as a ruled grid with column numbers across the top and row numbers down the side, and the shared square labeled `i/j` (`SQUARE`, `greekOf`, `greekKey`; cipher id `greek`).
 - A key for the current cipher is shown below the puzzle.
 - The player **types** letters into the answer boxes. Backspace removes the last letter; tapping a box clears it.
 - Anything that isn't a letter a–z (the apostrophe in `don't`, `I'll`, ...) is **filled in already**: it shows in its place with no code symbol and no box. It is skipped when typing, and Backspace and tapping can't remove it (the `given` array).
