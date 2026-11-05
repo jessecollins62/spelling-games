@@ -242,11 +242,12 @@
   #wordhuntGame.mode > div { width: 100%; text-align: center; }
   #whGame, #whEnd { display: none; }
   #whEnd .score { font-size: 3rem; color: #ffd84a; margin: 10px 0; }
-  #whLetters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px auto 18px; max-width: 900px; touch-action: manipulation; }
+  #whLetters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px auto 10px; max-width: 900px; touch-action: manipulation; }
   #whLetters button {
     width: 58px; height: 58px; padding: 0; font-size: 2rem; border-radius: 12px;
     background: #fff3c4; color: #3a2400; box-shadow: 0 5px 0 #b88f00;
   }
+  #whShuffle { font-size: 1.1rem; padding: 7px 18px; margin-bottom: 18px; background: #c9b3ff; box-shadow: 0 5px 0 #6b4bb5; }
   #whMain { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; align-items: flex-start; }
   #whPlay { flex: 1 1 420px; max-width: 600px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   #whInput { min-height: 50px; }
@@ -494,6 +495,7 @@
       </div>
       <div class="tray-label">Your letters</div>
       <div id="whLetters"></div>
+      <div><button id="whShuffle">🔀 Shuffle</button></div>
       <div id="whMain">
         <div id="whPlay">
           <div id="whInput" class="wg-row"></div>
@@ -2203,14 +2205,8 @@ const wordHunt = (function () {
     const quiz = chooseQuiz([...shown.keys()]);
     targets = quiz.words.map(key => ({ word: shown.get(key), key }));
     targets.sort((a, b) => a.key.localeCompare(b.key));
-    letters = [...quiz.letters].sort(); // A to Z
-    $('whLetters').innerHTML = '';
-    for (const ch of letters) {
-      const b = document.createElement('button');
-      b.textContent = ch;
-      b.addEventListener('pointerdown', e => { e.preventDefault(); typeLetter(ch); });
-      $('whLetters').appendChild(b);
-    }
+    letters = [...quiz.letters].sort(); // A to Z to start; 🔀 Shuffle mixes them up
+    showLetters();
     found = new Set(); bonus = new Set(); guess = ''; latest = null; pending = false;
     clearStale();
     running = true;
@@ -2225,6 +2221,24 @@ const wordHunt = (function () {
     pending = false;
     clearStale();
     show('whStart');
+  }
+
+  function showLetters() {
+    $('whLetters').innerHTML = '';
+    for (const ch of letters) {
+      const b = document.createElement('button');
+      b.textContent = ch;
+      b.addEventListener('pointerdown', e => { e.preventDefault(); typeLetter(ch); });
+      $('whLetters').appendChild(b);
+    }
+  }
+
+  // Mix up the order of the letters (always a different order than before)
+  function shuffleLetters() {
+    if (!running || letters.length < 2) return;
+    const before = letters.join('');
+    do letters = shuffle(letters); while (letters.join('') === before);
+    showLetters();
   }
 
   const tile = (ch, cls) => '<div class="wg-tile ' + cls + '">' + ch + '</div>';
@@ -2337,6 +2351,7 @@ const wordHunt = (function () {
   $('whGo').onclick = e => { e.currentTarget.blur(); newGame(); };
   $('whAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
   $('whDone').onclick = e => { e.currentTarget.blur(); finish(); };
+  $('whShuffle').onclick = e => { e.currentTarget.blur(); shuffleLetters(); };
   show('whStart');
 
   return { stop, loadDictionary };
