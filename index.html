@@ -480,7 +480,7 @@
 
   <div id="wordhuntGame" class="mode" style="display:none">
     <div id="whStart">
-      <p style="font-size:1.4rem">Use the letters to find every word on your spelling list!<br>
+      <p style="font-size:1.4rem">You get about 8 letters, and some of your spelling words are hiding in them. Can you find them all?<br>
         You can use each letter as many times as you need.<br>
         The list on the right shows a blank for each word you haven't found yet.<br>
         Find other real words too, and they go on your ⭐ bonus list!</p>
@@ -513,7 +513,7 @@
       <h2 id="whEndTitle"></h2>
       <div class="score" id="whEndScore"></div>
       <div id="whSummary" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
-      <button id="whAgain">🔄 Play again</button>
+      <button id="whAgain">🔄 New letters</button>
     </div>
   </div>
 
@@ -2147,25 +2147,63 @@ const wordHunt = (function () {
     return listWords.has(w) || (dict !== null && dict.has(w));
   }
 
+  // --- Choosing the letters ---
+  // Pick about 8 letters that spell several of the list's words. Start from a random word, then keep
+  // adding the word that needs the fewest new letters. Do that TRIES times and pick at random from the
+  // better results, so each game is different. If 8 letters can't spell at least MIN_WORDS words, allow 9.
+  const LETTER_LIMITS = [8, 9], MIN_WORDS = 3, TRIES = 40;
+  function buildQuiz(keys, maxLetters) {
+    const sets = keys.map(k => new Set(k));
+    const pick = a => a[Math.floor(Math.random() * a.length)];
+    const seeds = keys.map((k, i) => i).filter(i => sets[i].size <= maxLetters);
+    if (!seeds.length) return null;
+    const options = [];
+    for (let t = 0; t < TRIES; t++) {
+      const letters = new Set(sets[pick(seeds)]);
+      while (letters.size < maxLetters) {
+        let best = [], fewest = Infinity;
+        sets.forEach((s, i) => {
+          const add = [...s].filter(c => !letters.has(c)).length;
+          if (add === 0 || letters.size + add > maxLetters) return;
+          if (add < fewest) { fewest = add; best = [i]; } else if (add === fewest) best.push(i);
+        });
+        if (!best.length) break;
+        sets[pick(best)].forEach(c => letters.add(c));
+      }
+      options.push({ letters, words: keys.filter((k, i) => [...sets[i]].every(c => letters.has(c))) });
+    }
+    const most = Math.max(...options.map(o => o.words.length));
+    return pick(options.filter(o => o.words.length >= most * 0.75));
+  }
+  function chooseQuiz(keys) {
+    let quiz = null;
+    for (const max of LETTER_LIMITS) {
+      quiz = buildQuiz(keys, max) || quiz;
+      if (quiz && quiz.words.length >= Math.min(MIN_WORDS, keys.length)) break;
+    }
+    // every word is too long for the limit: fall back to all the list's letters
+    return quiz || { letters: new Set(keys.join('')), words: keys };
+  }
+
   // --- Game ---
-  // targets: the list's words, alphabetical. key = letters only, lowercase (don't -> dont), which is what gets typed.
+  // targets: the quiz words, alphabetical. key = letters only, lowercase (don't -> dont), which is what gets typed.
   let targets, letters, found, bonus, guess, latest, running = false;
   // After a rejected guess the letters shake, then clear. Typing right away starts a new word.
   let stale = false, clearTimer;
 
   function newGame() {
     loadDictionary();
-    const seen = new Set();
-    targets = [];
+    const shown = new Map(); // key -> word as written on the list (Easter, don't)
     for (const w of WORDS) {
       const key = w.word.toLowerCase().replace(/[^a-z]/g, '');
-      if (key && !seen.has(key)) { seen.add(key); targets.push({ word: w.word, key }); }
+      if (key && !shown.has(key)) shown.set(key, w.word);
     }
-    if (!targets.length) { $('whNone').textContent = 'This list has no words this game can use.'; return; }
+    if (!shown.size) { $('whNone').textContent = 'This list has no words this game can use.'; return; }
     $('whNone').textContent = '';
+    const quiz = chooseQuiz([...shown.keys()]);
+    targets = quiz.words.map(key => ({ word: shown.get(key), key }));
     targets.sort((a, b) => a.key.localeCompare(b.key));
-    // every letter used by any word on the list, once each, A to Z
-    letters = [...new Set(targets.flatMap(t => [...t.key]))].sort();
+    letters = [...quiz.letters].sort(); // A to Z
     $('whLetters').innerHTML = '';
     for (const ch of letters) {
       const b = document.createElement('button');

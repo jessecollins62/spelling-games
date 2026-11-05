@@ -173,15 +173,16 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - When the word is found, the message says how many guesses it took and the word is spoken. **Next word ➜** (or Enter) moves on. **🏳️ Show me the word** gives up: it reveals the word and adds it to "Words to practice".
 - No points. The end screen shows how many words were found, the number of guesses for each (and clues used, if any), and words to practice.
 
-### 🔍 Word Hunt: find the list's words in a set of letters
+### 🔍 Word Hunt: find spelling words hidden in a set of letters
 
-- The top shows **every letter used by any word on the list**, once each, A to Z. Letters can be used as many times as needed. Letters can be typed or tapped. Typing a letter that isn't there shows "There's no "z" in your letters."
-- The goal is to type every word on the list and press **Enter**. Apostrophes and capitals are dropped for typing (`dont` finds `don't`, `easter` finds `Easter`), but the list shows the word as written.
-- On the right, **Spelling words** lists the list's words in alphabetical order. Words not found yet show as one blank per letter in their place, so the blanks hint at the length and where in the alphabet each missing word falls.
+- Each game picks **about 8 letters** that spell some of the list's words (`chooseQuiz`, `buildQuiz`). Start from a random list word, then keep adding the word that needs the fewest new letters, until there are 8. This is done 40 times (`TRIES`) and one of the better results (at least 75% as many words as the best) is picked at random, so each game is different. If 8 letters can't spell at least 3 list words (`MIN_WORDS`), 9 are allowed (`LETTER_LIMITS`). The quiz is every list word those letters can spell. In testing, most quizzes have 3–5 words (the 20-word Long lists: about 3–7). 🔄 New letters picks a new set.
+- The letters show at the top, once each, A to Z. Letters can be used as many times as needed. Letters can be typed or tapped. Typing a letter that isn't there shows "There's no "z" in your letters."
+- The goal is to type every quiz word and press **Enter**. Apostrophes and capitals are dropped for typing (`dont` finds `don't`, `easter` finds `Easter`), but the list shows the word as written.
+- On the right, **Spelling words** lists the quiz words in alphabetical order. Words not found yet show as one blank per letter in their place, so the blanks hint at the length and where in the alphabet each missing word falls.
 - Any other real word of at least 3 letters (`MIN_BONUS`) goes on the **⭐ Bonus words** list, shown alphabetically. A word counts as real if it's in `dictionary.js` or on any list.
 - A guess that's already found, too short for a bonus, or not a real word shakes with a message, then clears after about 1 second. Typing (or Delete) right away starts fresh.
 - A found spelling word is spoken. When all are found, the message says so, and he can keep hunting bonus words.
-- **🏁 I'm done** ends the game at any time. The end screen shows words found out of the total, the bonus words, and any list words not found as "Words to practice". No points.
+- **🏁 I'm done** ends the game at any time. The end screen shows words found out of the total, the bonus words, and any quiz words not found as "Words to practice". No points.
 - **Dictionary:** `dictionary.js` holds the public-domain ENABLE word list (about 172,600 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages), with about 200 rude words removed. It is loaded only when the Word Hunt tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). A guess made while it is still loading is checked when it finishes. If it can't load (offline), only the list's own words count.
 
 
