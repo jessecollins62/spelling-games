@@ -263,7 +263,7 @@
   #whWords { list-style: none; padding: 0; margin: 0 0 16px; }
   #whWords li { font-size: 1.3rem; font-weight: bold; min-height: 32px; display: flex; align-items: center; color: #8fe0a3; }
   #whWords li.new, #whBonus span.new { animation: pop 0.6s; }
-  .wh-blank { display: inline-block; width: 16px; height: 20px; margin-right: 4px; border-bottom: 3px solid rgba(255,255,255,.45); }
+  .wh-blank { display: inline-block; width: 18px; height: 26px; line-height: 24px; margin-right: 4px; border-bottom: 3px solid rgba(255,255,255,.45); text-align: center; color: #fff; font-size: 1.15rem; }
   #whBonus { font-size: 1.15rem; line-height: 1.7; }
   #whBonus span { display: inline-block; background: #ffd84a33; border-radius: 8px; padding: 0 8px; margin: 0 6px 6px 0; }
   #whBonus em { opacity: .7; }
@@ -2250,7 +2250,8 @@ const wordHunt = (function () {
     $('whBonusCount').textContent = bonus.size;
     $('whWords').innerHTML = targets.map(t => found.has(t.key)
       ? '<li' + (t.key === latest ? ' class="new"' : '') + '>' + esc(t.word) + '</li>'
-      : '<li>' + '<span class="wh-blank"></span>'.repeat(t.key.length) + '</li>').join('');
+      // not found yet: the first letter as a hint, then a blank for each other letter
+      : '<li><span class="wh-blank">' + esc(t.word[0]) + '</span>' + '<span class="wh-blank"></span>'.repeat(t.key.length - 1) + '</li>').join('');
     $('whBonus').innerHTML = bonus.size
       ? [...bonus].sort().map(w => '<span' + (w === latest ? ' class="new"' : '') + '>' + w + '</span>').join('')
       : '<em>None yet. Try making other words!</em>';
