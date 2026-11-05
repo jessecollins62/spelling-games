@@ -484,14 +484,17 @@
       <p style="font-size:1.4rem">You get about 8 letters, and some of your spelling words are hiding in them. Can you find them all?<br>
         You can use each letter as many times as you need.<br>
         The list on the right shows a blank for each word you haven't found yet.<br>
-        Find other real words too, and they go on your ⭐ bonus list!</p>
+        Find other real words too, and they go on your ⭐ bonus list!<br>
+        Score: 1 point per letter. Spelling words count double, and so do words longer than 5 letters!</p>
       <div id="whNone" style="color:#ff9b9b; margin-bottom:12px"></div>
       <button id="whGo">Start!</button>
     </div>
     <div id="whGame">
       <div class="hud">
-        <div>Words <b id="whCount">0</b> / <b id="whTotal">0</b></div>
+        <div>Spelling words <b id="whCount">0</b> / <b id="whTotal">0</b></div>
         <div>Bonus <b id="whBonusCount">0</b></div>
+        <div>Words found <b id="whAllCount">0</b></div>
+        <div>Score <b id="whScore">0</b></div>
       </div>
       <div class="tray-label">Your letters</div>
       <div id="whLetters"></div>
@@ -2123,6 +2126,7 @@ const wordGuess = (function () {
 const wordHunt = (function () {
   const MAX_LEN = 15;  // longest word that can be typed
   const MIN_BONUS = 3; // bonus words need at least this many letters
+  const LONG = 5;      // words longer than this score double
   const panels = ['whStart', 'whGame', 'whEnd'];
   const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
 
@@ -2189,7 +2193,7 @@ const wordHunt = (function () {
 
   // --- Game ---
   // targets: the quiz words, alphabetical. key = letters only, lowercase (don't -> dont), which is what gets typed.
-  let targets, letters, found, bonus, guess, latest, running = false;
+  let targets, letters, found, bonus, guess, latest, score, running = false;
   // After a rejected guess the letters shake, then clear. Typing right away starts a new word.
   let stale = false, clearTimer;
 
@@ -2208,6 +2212,7 @@ const wordHunt = (function () {
     letters = [...quiz.letters].sort(); // A to Z to start; 🔀 Shuffle mixes them up
     showLetters();
     found = new Set(); bonus = new Set(); guess = ''; latest = null; pending = false;
+    score = 0;
     clearStale();
     running = true;
     $('whTotal').textContent = targets.length;
@@ -2248,6 +2253,8 @@ const wordHunt = (function () {
     $('whInput').innerHTML = [...guess].map(ch => tile(ch, 'typed')).join('') + (guess.length < MAX_LEN ? tile('', 'cursor') : '');
     $('whCount').textContent = found.size;
     $('whBonusCount').textContent = bonus.size;
+    $('whAllCount').textContent = found.size + bonus.size;
+    $('whScore').textContent = score;
     $('whWords').innerHTML = targets.map(t => found.has(t.key)
       ? '<li' + (t.key === latest ? ' class="new"' : '') + '>' + esc(t.word) + '</li>'
       // not found yet: the first letter as a hint, then a blank for each other letter
@@ -2305,11 +2312,12 @@ const wordHunt = (function () {
       if (found.has(guess)) return shake('You already found "' + t.word + '"!');
       found.add(guess);
       latest = guess;
+      const pts = addPoints(guess, true);
       guess = '';
       speak(t.word);
       say(found.size === targets.length
-        ? '🎉 You found every spelling word! Keep looking for bonus words, or press I\'m done. 🎉'
-        : '✅ "' + t.word + '" is on your list!');
+        ? '🎉 ' + pts + ' You found every spelling word! Keep looking for bonus words, or press I\'m done. 🎉'
+        : '✅ "' + t.word + '" is on your list! ' + pts);
       return render();
     }
     if (bonus.has(guess)) return shake('"' + guess + '" is already on your bonus list!');
@@ -2321,9 +2329,18 @@ const wordHunt = (function () {
     }
     bonus.add(guess);
     latest = guess;
-    say('⭐ Bonus word: "' + guess + '"!');
+    say('⭐ Bonus word: "' + guess + '"! ' + addPoints(guess, false));
     guess = '';
     render();
+  }
+
+  // 1 point per letter. Doubled for a spelling-list word, and doubled again for a word over LONG letters.
+  // Returns the "+N" text for the message, like "+24 (×4)".
+  function addPoints(key, onList) {
+    const times = (onList ? 2 : 1) * (key.length > LONG ? 2 : 1);
+    const pts = key.length * times;
+    score += pts;
+    return '+' + pts + (times > 1 ? ' (×' + times + ')' : '');
   }
 
   function finish() {
@@ -2333,9 +2350,11 @@ const wordHunt = (function () {
     show('whEnd');
     const all = found.size === targets.length;
     $('whEndTitle').textContent = all ? '🎉 You found every word! 🎉' : 'Nice hunting!';
-    $('whEndScore').textContent = found.size + ' of ' + targets.length + ' words';
+    $('whEndScore').textContent = score + ' pts';
     const missed = targets.filter(t => !found.has(t.key)).map(t => esc(t.word));
     $('whSummary').innerHTML =
+      'Words found: <b>' + (found.size + bonus.size) + '</b><br>' +
+      'Spelling words: <b>' + found.size + '</b> of ' + targets.length + '<br>' +
       '⭐ Bonus words: <b>' + bonus.size + '</b>' + (bonus.size ? ' (' + [...bonus].sort().join(', ') + ')' : '') + '<br>' +
       (missed.length ? 'Words to practice: <b>' + missed.join(', ') + '</b>' : '');
   }

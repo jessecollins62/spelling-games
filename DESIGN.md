@@ -182,7 +182,8 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - Any other real word of at least 3 letters (`MIN_BONUS`) goes on the **⭐ Bonus words** list, shown alphabetically. A word counts as real if it's in `dictionary.js` or on any list.
 - A guess that's already found, too short for a bonus, or not a real word shakes with a message, then clears after about 1 second. Typing (or Delete) right away starts fresh.
 - A found spelling word is spoken. When all are found, the message says so, and he can keep hunting bonus words.
-- **🏁 I'm done** ends the game at any time. The end screen shows words found out of the total, the bonus words, and any quiz words not found as "Words to practice". No points.
+- **Score:** 1 point per letter (`addPoints`). A spelling-list word counts double, and a word longer than 5 letters (`LONG`) counts double too. Both together is ×4 (`balloon` = 7 × 4 = 28). The message shows the points, like "+28 (×4)". The top bar shows spelling words found / total, bonus words, total words found, and the score.
+- **🏁 I'm done** ends the game at any time. The end screen shows the score, total words found, spelling words found out of the total, the bonus words, and any quiz words not found as "Words to practice".
 - **Dictionary:** `dictionary.js` holds the public-domain ENABLE word list (about 172,600 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages), with about 200 rude words removed. It is loaded only when the Word Hunt tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). A guess made while it is still loading is checked when it finishes. If it can't load (offline), only the list's own words count.
 
 
