@@ -237,6 +237,35 @@
   #wgKeyBar { display: flex; gap: 8px; margin-top: 12px; touch-action: manipulation; }
   #wgKeyBar button { flex: 1; font-size: 1.1rem; }
   #wgKeyBar #wgEnter { background: #ffd84a; }
+  /* word hunt */
+  #wordhuntGame { max-width: 1100px; }
+  #wordhuntGame.mode > div { width: 100%; text-align: center; }
+  #whGame, #whEnd { display: none; }
+  #whEnd .score { font-size: 3rem; color: #ffd84a; margin: 10px 0; }
+  #whLetters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px auto 18px; max-width: 900px; touch-action: manipulation; }
+  #whLetters button {
+    width: 58px; height: 58px; padding: 0; font-size: 2rem; border-radius: 12px;
+    background: #fff3c4; color: #3a2400; box-shadow: 0 5px 0 #b88f00;
+  }
+  #whMain { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; align-items: flex-start; }
+  #whPlay { flex: 1 1 420px; max-width: 600px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  #whInput { min-height: 50px; }
+  #whInput.wrong { animation: shake 0.4s; }
+  #whInput.wrong .wg-tile.typed { background: #ffb3b3; }
+  #whKeyBar { display: flex; gap: 10px; touch-action: manipulation; }
+  #whKeyBar button { font-size: 1.2rem; padding: 10px 22px; }
+  #whDel { background: #fff3c4; }
+  #whMsg { font-size: 1.4rem; min-height: 1.6em; }
+  #whDone { font-size: 1.1rem; padding: 8px 18px; background: #8ec5ff; box-shadow: 0 5px 0 #3f7fc0; margin-top: 10px; }
+  #whLists { background: rgba(0,0,0,.25); border-radius: 18px; padding: 14px 18px; text-align: left; min-width: 240px; max-width: 360px; }
+  #whLists h3 { color: #ffd84a; margin: 0 0 8px; font-size: 1.2rem; }
+  #whWords { list-style: none; padding: 0; margin: 0 0 16px; }
+  #whWords li { font-size: 1.3rem; font-weight: bold; min-height: 32px; display: flex; align-items: center; color: #8fe0a3; }
+  #whWords li.new, #whBonus span.new { animation: pop 0.6s; }
+  .wh-blank { display: inline-block; width: 16px; height: 20px; margin-right: 4px; border-bottom: 3px solid rgba(255,255,255,.45); }
+  #whBonus { font-size: 1.15rem; line-height: 1.7; }
+  #whBonus span { display: inline-block; background: #ffd84a33; border-radius: 8px; padding: 0 8px; margin: 0 6px 6px 0; }
+  #whBonus em { opacity: .7; }
 </style>
 </head>
 <body>
@@ -249,6 +278,7 @@
     <button id="tabBlaster">☄️ Blaster</button>
     <button id="tabCrossword">✏️ Crossword</button>
     <button id="tabWordGuess">🟩 Word Guess</button>
+    <button id="tabWordHunt">🔍 Word Hunt</button>
   </div>
   <div id="listBar"><label>Word list: <select id="listPick"></select></label></div>
 
@@ -445,6 +475,45 @@
       <div class="score" id="wgFound"></div>
       <div id="wgSummary" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
       <button id="wgAgain">🔄 Restart</button>
+    </div>
+  </div>
+
+  <div id="wordhuntGame" class="mode" style="display:none">
+    <div id="whStart">
+      <p style="font-size:1.4rem">Use the letters to find every word on your spelling list!<br>
+        You can use each letter as many times as you need.<br>
+        The list on the right shows a blank for each word you haven't found yet.<br>
+        Find other real words too, and they go on your ⭐ bonus list!</p>
+      <div id="whNone" style="color:#ff9b9b; margin-bottom:12px"></div>
+      <button id="whGo">Start!</button>
+    </div>
+    <div id="whGame">
+      <div class="hud">
+        <div>Words <b id="whCount">0</b> / <b id="whTotal">0</b></div>
+        <div>Bonus <b id="whBonusCount">0</b></div>
+      </div>
+      <div class="tray-label">Your letters</div>
+      <div id="whLetters"></div>
+      <div id="whMain">
+        <div id="whPlay">
+          <div id="whInput" class="wg-row"></div>
+          <div id="whKeyBar"><button id="whDel">⌫ Delete</button><button id="whEnter">Enter ✓</button></div>
+          <div id="whMsg"></div>
+          <button id="whDone">🏁 I'm done</button>
+        </div>
+        <div id="whLists">
+          <h3>Spelling words</h3>
+          <ol id="whWords"></ol>
+          <h3>⭐ Bonus words</h3>
+          <div id="whBonus"></div>
+        </div>
+      </div>
+    </div>
+    <div id="whEnd">
+      <h2 id="whEndTitle"></h2>
+      <div class="score" id="whEndScore"></div>
+      <div id="whSummary" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
+      <button id="whAgain">🔄 Play again</button>
     </div>
   </div>
 
@@ -2048,6 +2117,193 @@ const wordGuess = (function () {
   return { stop };
 })();
 
+// ===== Word hunt =====
+const wordHunt = (function () {
+  const MAX_LEN = 15;  // longest word that can be typed
+  const MIN_BONUS = 3; // bonus words need at least this many letters
+  const panels = ['whStart', 'whGame', 'whEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+
+  // --- Real-word check for bonus words. dictionary.js is big, so it loads the first time this tab is opened. ---
+  let dict = null, dictStatus = 'idle', pending = false; // pending: Enter was pressed while it was still loading
+  function loadDictionary() {
+    if (dictStatus !== 'idle') return;
+    dictStatus = 'loading';
+    const s = document.createElement('script');
+    s.src = 'dictionary.js';
+    s.onload = () => { dict = new Set(DICTIONARY.split('\n')); dictStatus = 'ready'; retry(); };
+    s.onerror = () => { dictStatus = 'failed'; retry(); }; // offline: only spelling words count
+    document.head.appendChild(s);
+  }
+  function retry() {
+    if (pending) { pending = false; if (running) submit(); }
+  }
+  let listWords = null; // every word on every list counts as real (Easter, ...)
+  function isWord(w) {
+    if (!listWords) {
+      listWords = new Set();
+      WORD_LISTS.forEach(l => l.words.forEach(x => listWords.add(x.word.toLowerCase().replace(/[^a-z]/g, ''))));
+    }
+    return listWords.has(w) || (dict !== null && dict.has(w));
+  }
+
+  // --- Game ---
+  // targets: the list's words, alphabetical. key = letters only, lowercase (don't -> dont), which is what gets typed.
+  let targets, letters, found, bonus, guess, latest, running = false;
+  // After a rejected guess the letters shake, then clear. Typing right away starts a new word.
+  let stale = false, clearTimer;
+
+  function newGame() {
+    loadDictionary();
+    const seen = new Set();
+    targets = [];
+    for (const w of WORDS) {
+      const key = w.word.toLowerCase().replace(/[^a-z]/g, '');
+      if (key && !seen.has(key)) { seen.add(key); targets.push({ word: w.word, key }); }
+    }
+    if (!targets.length) { $('whNone').textContent = 'This list has no words this game can use.'; return; }
+    $('whNone').textContent = '';
+    targets.sort((a, b) => a.key.localeCompare(b.key));
+    // every letter used by any word on the list, once each, A to Z
+    letters = [...new Set(targets.flatMap(t => [...t.key]))].sort();
+    $('whLetters').innerHTML = '';
+    for (const ch of letters) {
+      const b = document.createElement('button');
+      b.textContent = ch;
+      b.addEventListener('pointerdown', e => { e.preventDefault(); typeLetter(ch); });
+      $('whLetters').appendChild(b);
+    }
+    found = new Set(); bonus = new Set(); guess = ''; latest = null; pending = false;
+    clearStale();
+    running = true;
+    $('whTotal').textContent = targets.length;
+    say('');
+    show('whGame');
+    render();
+  }
+
+  function stop() {
+    running = false;
+    pending = false;
+    clearStale();
+    show('whStart');
+  }
+
+  const tile = (ch, cls) => '<div class="wg-tile ' + cls + '">' + ch + '</div>';
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  function render() {
+    $('whInput').innerHTML = [...guess].map(ch => tile(ch, 'typed')).join('') + (guess.length < MAX_LEN ? tile('', 'cursor') : '');
+    $('whCount').textContent = found.size;
+    $('whBonusCount').textContent = bonus.size;
+    $('whWords').innerHTML = targets.map(t => found.has(t.key)
+      ? '<li' + (t.key === latest ? ' class="new"' : '') + '>' + esc(t.word) + '</li>'
+      : '<li>' + '<span class="wh-blank"></span>'.repeat(t.key.length) + '</li>').join('');
+    $('whBonus').innerHTML = bonus.size
+      ? [...bonus].sort().map(w => '<span' + (w === latest ? ' class="new"' : '') + '>' + w + '</span>').join('')
+      : '<em>None yet. Try making other words!</em>';
+  }
+
+  function say(text) { $('whMsg').textContent = text; }
+
+  function typeLetter(ch) {
+    if (!running) return;
+    if (!letters.includes(ch)) { say('There\'s no "' + ch + '" in your letters.'); return; }
+    clearStale();
+    if (guess.length >= MAX_LEN) return;
+    guess += ch;
+    pending = false;
+    say('');
+    render();
+  }
+
+  function backspace() {
+    if (!running || !guess) return;
+    if (stale) clearStale(); // Delete after a rejected guess clears the whole thing
+    else guess = guess.slice(0, -1);
+    pending = false;
+    say('');
+    render();
+  }
+
+  function clearStale() {
+    clearTimeout(clearTimer);
+    if (!stale) return;
+    stale = false;
+    guess = '';
+    $('whInput').classList.remove('wrong');
+  }
+
+  function shake(text) {
+    const el = $('whInput');
+    el.classList.remove('wrong');
+    void el.offsetWidth; // restart the shake animation
+    el.classList.add('wrong');
+    say(text);
+    stale = true;
+    clearTimeout(clearTimer);
+    clearTimer = setTimeout(() => { clearStale(); render(); }, 900);
+  }
+
+  function submit() {
+    if (!running || !guess || stale) return;
+    const t = targets.find(x => x.key === guess);
+    if (t) {
+      if (found.has(guess)) return shake('You already found "' + t.word + '"!');
+      found.add(guess);
+      latest = guess;
+      guess = '';
+      speak(t.word);
+      say(found.size === targets.length
+        ? '🎉 You found every spelling word! Keep looking for bonus words, or press I\'m done. 🎉'
+        : '✅ "' + t.word + '" is on your list!');
+      return render();
+    }
+    if (bonus.has(guess)) return shake('"' + guess + '" is already on your bonus list!');
+    if (guess.length < MIN_BONUS) return shake('Bonus words need at least ' + MIN_BONUS + ' letters.');
+    if (!isWord(guess)) {
+      if (dictStatus === 'loading') { pending = true; say('Checking the word...'); return; }
+      if (dictStatus === 'failed') return shake('"' + guess + '" isn\'t on your list. (Bonus words can\'t be checked right now.)');
+      return shake('"' + guess + '" isn\'t in my dictionary. Try another word!');
+    }
+    bonus.add(guess);
+    latest = guess;
+    say('⭐ Bonus word: "' + guess + '"!');
+    guess = '';
+    render();
+  }
+
+  function finish() {
+    if (!running) return;
+    running = false;
+    pending = false;
+    show('whEnd');
+    const all = found.size === targets.length;
+    $('whEndTitle').textContent = all ? '🎉 You found every word! 🎉' : 'Nice hunting!';
+    $('whEndScore').textContent = found.size + ' of ' + targets.length + ' words';
+    const missed = targets.filter(t => !found.has(t.key)).map(t => esc(t.word));
+    $('whSummary').innerHTML =
+      '⭐ Bonus words: <b>' + bonus.size + '</b>' + (bonus.size ? ' (' + [...bonus].sort().join(', ') + ')' : '') + '<br>' +
+      (missed.length ? 'Words to practice: <b>' + missed.join(', ') + '</b>' : '');
+  }
+
+  window.addEventListener('keydown', e => {
+    if (!running || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Enter') { e.preventDefault(); if (!e.repeat) submit(); }
+    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); backspace(); }
+    else if (/^[a-z]$/i.test(e.key)) typeLetter(e.key.toLowerCase());
+  });
+
+  $('whDel').addEventListener('pointerdown', e => { e.preventDefault(); backspace(); });
+  $('whEnter').addEventListener('pointerdown', e => { e.preventDefault(); submit(); });
+  $('whGo').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('whAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('whDone').onclick = e => { e.currentTarget.blur(); finish(); };
+  show('whStart');
+
+  return { stop, loadDictionary };
+})();
+
 // ===== Switching between the games =====
 const GAMES = {
   // round = the panel shown while a round is being played
@@ -2057,6 +2313,7 @@ const GAMES = {
   blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  round: 'blGame', stop: () => blaster.stop() },
   crossword: { tab: 'tabCrossword', panel: 'crosswordGame', round: 'cwGame', stop: () => crossword.stop() },
   wordguess: { tab: 'tabWordGuess', panel: 'wordguessGame', round: 'wgGame', stop: () => wordGuess.stop() },
+  wordhunt: { tab: 'tabWordHunt', panel: 'wordhuntGame', round: 'whGame', stop: () => wordHunt.stop() },
 };
 function showTab(which) {
   for (const [name, g] of Object.entries(GAMES)) {
@@ -2066,6 +2323,7 @@ function showTab(which) {
     // leaving a round in progress sends that game back to its start screen
     if (!on && g.stop) g.stop();
   }
+  if (which === 'wordhunt') wordHunt.loadDictionary(); // start loading it before Start is pressed
 }
 for (const [name, g] of Object.entries(GAMES)) $(g.tab).onclick = () => showTab(name);
 

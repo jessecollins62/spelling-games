@@ -8,9 +8,10 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the six games, tab switching, and the word-list picker. One file, roughly 2,100 lines. |
+| `index.html` | The whole app: styles, the seven games, tab switching, and the word-list picker. One file, roughly 2,350 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
+| `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list with rude words removed) that Word Hunt uses to check bonus words. Big (1.7 MB), so `index.html` loads it only when Word Hunt is opened. |
 | `print.html` | A printable black-and-white "DECODE" worksheet (Code Breaker on paper) for any list, plus a page of cipher keys. |
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
 | `LMB-words-image/` | Photos of the 10 Seeing Stars source pages (Star Words 1–1000). Local only: left out of git by `.gitignore` because they are copyrighted. |
@@ -42,7 +43,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **Long E list**, **Long A list**, and **Long O list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all six games.
+1. **Long E list**, **Long A list**, and **Long O list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all seven games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
@@ -60,7 +61,7 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`). Each game has three panels: start, in-game, and end.
+2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordhuntGame`). Each game has three panels: start, in-game, and end.
 3. **`words.js`** and **`meanings.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
@@ -172,6 +173,18 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - When the word is found, the message says how many guesses it took and the word is spoken. **Next word ➜** (or Enter) moves on. **🏳️ Show me the word** gives up: it reveals the word and adds it to "Words to practice".
 - No points. The end screen shows how many words were found, the number of guesses for each (and clues used, if any), and words to practice.
 
+### 🔍 Word Hunt: find the list's words in a set of letters
+
+- The top shows **every letter used by any word on the list**, once each, A to Z. Letters can be used as many times as needed. Letters can be typed or tapped. Typing a letter that isn't there shows "There's no "z" in your letters."
+- The goal is to type every word on the list and press **Enter**. Apostrophes and capitals are dropped for typing (`dont` finds `don't`, `easter` finds `Easter`), but the list shows the word as written.
+- On the right, **Spelling words** lists the list's words in alphabetical order. Words not found yet show as one blank per letter in their place, so the blanks hint at the length and where in the alphabet each missing word falls.
+- Any other real word of at least 3 letters (`MIN_BONUS`) goes on the **⭐ Bonus words** list, shown alphabetically. A word counts as real if it's in `dictionary.js` or on any list.
+- A guess that's already found, too short for a bonus, or not a real word shakes with a message, then clears after about 1 second. Typing (or Delete) right away starts fresh.
+- A found spelling word is spoken. When all are found, the message says so, and he can keep hunting bonus words.
+- **🏁 I'm done** ends the game at any time. The end screen shows words found out of the total, the bonus words, and any list words not found as "Words to practice". No points.
+- **Dictionary:** `dictionary.js` holds the public-domain ENABLE word list (about 172,600 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages), with about 200 rude words removed. It is loaded only when the Word Hunt tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). A guess made while it is still loading is checked when it finishes. If it can't load (offline), only the list's own words count.
+
+
 ## Printable worksheet (`print.html`)
 
 - Title "DECODE". Pick a list, then **Shuffle again** or **Print**.
@@ -188,7 +201,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - **High scores reset on reload** (in memory only).
 - **`fd()` decoys are weak** for very short words and sometimes make real words.
 - **Blaster doesn't work with LMB lists** (they have meanings now, but no lookalikes).
-- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess has one).
+- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess and Word Hunt have one).
 - **Cipher code is duplicated** between `index.html` and `print.html`.
 
 ## Adding a word list
