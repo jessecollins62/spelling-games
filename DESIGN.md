@@ -8,10 +8,11 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the seven games, tab switching, and the word-list picker. One file, roughly 2,350 lines. |
+| `index.html` | The whole app: styles, the eight games, tab switching, and the word-list picker. One file, roughly 2,850 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
 | `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list with rude words removed) that Word Hunt uses to check bonus words. Big (1.7 MB), so `index.html` loads it only when Word Hunt is opened. |
+| `puzzles.js` | Riddles (`RIDDLES`) and emoji pictures (`PICTURES`) for the Escape Room, keyed by lowercase word. Loaded after `meanings.js` by `index.html`. |
 | `print.html` | A printable black-and-white "DECODE" worksheet (Code Breaker on paper) for any list, plus a page of cipher keys. |
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
 | `LMB-words-image/` | Photos of the 10 Seeing Stars source pages (Star Words 1–1000). Local only: left out of git by `.gitignore` because they are copyrighted. |
@@ -43,7 +44,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **Long E list**, **Long A list**, **Long O list**, and **Long U list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all seven games.
+1. **Long E list**, **Long A list**, **Long O list**, and **Long U list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all eight games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
@@ -61,8 +62,8 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordhuntGame`). Each game has three panels: start, in-game, and end.
-3. **`words.js`** and **`meanings.js`**, then a **shared helpers** script:
+2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
+3. **`words.js`**, **`meanings.js`**, and **`puzzles.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
    - `shuffle(array)`: returns a shuffled copy.
@@ -187,6 +188,21 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - **Dictionary:** `dictionary.js` holds the public-domain ENABLE word list (about 172,600 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages), with about 200 rude words removed. It is loaded only when the Word Hunt tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). A guess made while it is still loading is checked when it finishes. If it can't load (offline), only the list's own words count.
 
 
+### 🚪 Escape Room: solve puzzles to find keys and escape
+
+- Two rooms. The list is shuffled; the first half of the words hide in **Room 1: The Living Room**, the rest in **Room 2: The Secret Attic** (`ROOMS`). Each word hides behind one object in its room (bookshelf, clock, telescope, ...), drawn as a grid of emoji buttons on a wall-and-floor background. The rooms have different colors.
+- He clicks objects in any order. Each opens a puzzle whose answer is the word:
+  - **Riddle** (`RIDDLES` in `puzzles.js`): written for all 80 words in the Long lists.
+  - **Picture** (`PICTURES` in `puzzles.js`): an emoji with one clear answer, for 137 concrete words (animals, food, numbers, colors, ...).
+  - **Secret note**: the word's `meaning`, used when there's no riddle or picture.
+  - If a word has a riddle and a picture, one is picked at random each game.
+  - Riddles and notes have a **🔊 Read it** button.
+- He spells the answer into one box per letter (typed, or with the on-screen letters), which also shows the length. It's checked when full: wrong shakes, right finds a 🔑, says the word, and goes back to the room after about 1 second (or right away with Enter). Apostrophes are filled in already, like Code Breaker. ⬅ Back to the room (or Esc) leaves a puzzle to try another.
+- **💡 Hint**: the first hint shows the first letter faintly in its box (he still types it). The second says the word aloud (or, with no speech, shows the next letter). After that it can say the word again.
+- The door shows the keys left in this room. When Room 1's keys are all found, the door opens into Room 2. Finding Room 2's keys is the escape.
+- A timer runs for the whole game. The end screen shows the time, the fastest escape for this list this session (in memory), hints used, and "Words to practice" (any word with a wrong try or a hint). No points.
+
+
 ## Printable worksheet (`print.html`)
 
 - Title "DECODE". Pick a list, then **Shuffle again** or **Print**.
@@ -203,11 +219,12 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - **High scores reset on reload** (in memory only).
 - **`fd()` decoys are weak** for very short words and sometimes make real words.
 - **Blaster doesn't work with LMB lists** (they have meanings now, but no lookalikes).
-- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess and Word Hunt have one).
+- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess, Word Hunt, and Escape Room have one).
 - **Cipher code is duplicated** between `index.html` and `print.html`.
 
 ## Adding a word list
 
 1. Add a `{ name, words: [...] }` entry to `WORD_LISTS` in `words.js`. To make it the default for browsers with nothing saved, change `DEFAULT_LIST` in `index.html`.
 2. For all the games, give each word `decoys`, `meaning`, and `lookalikes`. For a quick list, use `decoys: fd("word")` and put meanings in `meanings.js` (Crossword then works; Blaster won't be available without lookalikes).
-3. Reload `index.html`; the new list appears in the picker.
+3. Optionally, add riddles or emoji pictures for the new words to `puzzles.js` (Escape Room uses the meaning when there are none).
+4. Reload `index.html`; the new list appears in the picker.
