@@ -2526,7 +2526,7 @@ const escapeRoom = (function () {
   // free: never locked; may hide a starting clue. where finishes "You look ...".
   const ROOMS = [
     { name: 'The Living Room', cls: 'living', decor: '<div class="er-window"></div><div class="er-rug"></div>', things: [
-      { e: '🖼️', name: 'painting', x: 22, y: 18, s: 7, free: true, where: 'behind the painting' },
+      { e: '🖼️', name: 'painting', x: 22, y: 18, s: 7, free: true, where: 'behind the painting', nudge: 'behind something hanging on the wall' },
       { e: '🕰️', name: 'clock', x: 6, y: 36, s: 10, lock: true, hint: 'that goes tick-tock' },
       { e: '📺', name: 'TV', x: 64, y: 26, s: 7, lock: true, hint: 'that shows cartoons' },
       { e: '🚪', name: 'door', x: 88, y: 37, s: 15, door: true },
@@ -2534,34 +2534,34 @@ const escapeRoom = (function () {
       { e: '🎹', name: 'piano', x: 21, y: 52, s: 10, lock: true, hint: 'with black and white keys' },
       { e: '📔', name: 'diary', x: 38, y: 34, s: 4, lock: true, hint: 'where someone writes their secrets' },
       { e: '🗄️', name: 'cabinet', x: 38, y: 48, s: 9, lock: true, hint: 'with drawers you pull out' },
-      { e: '🏺', name: 'vase', x: 56, y: 50, s: 5, free: true, where: 'inside the vase' },
-      { e: '🪴', name: 'plant', x: 74, y: 50, s: 8, free: true, where: 'in the flower pot' },
-      { e: '🛋️', name: 'couch', x: 50, y: 68, s: 12, free: true, where: 'under the couch cushions' },
+      { e: '🏺', name: 'vase', x: 56, y: 50, s: 5, free: true, where: 'inside the vase', nudge: 'inside something that holds flowers' },
+      { e: '🪴', name: 'plant', x: 74, y: 50, s: 8, free: true, where: 'in the flower pot', nudge: 'in something green and leafy' },
+      { e: '🛋️', name: 'couch', x: 50, y: 68, s: 12, free: true, where: 'under the couch cushions', nudge: 'under something soft you sit on' },
       { e: '📦', name: 'box', x: 9, y: 82, s: 9, lock: true, hint: 'made of brown cardboard' },
       { e: '🎒', name: 'backpack', x: 26, y: 85, s: 7, lock: true, hint: 'you take to school' },
       { e: '💼', name: 'briefcase', x: 41, y: 89, s: 6, lock: true, hint: 'that grown-ups carry to work' },
       { e: '🎁', name: 'present', x: 57, y: 86, s: 7, lock: true, hint: 'wrapped up with a bow' },
-      { e: '🧺', name: 'basket', x: 70, y: 88, s: 6, free: true, where: 'in the basket' },
+      { e: '🧺', name: 'basket', x: 70, y: 88, s: 6, free: true, where: 'in the basket', nudge: 'in something woven, down on the floor' },
       { e: '🧳', name: 'suitcase', x: 83, y: 74, s: 9, lock: true, hint: 'you pack for a trip' },
       { e: '🧸', name: 'teddy bear', x: 94, y: 88, s: 6, lock: true, hint: 'soft and cuddly, with a zipper on its back' },
     ] },
     { name: 'The Secret Attic', cls: 'attic', decor: '<div class="er-roof l"></div><div class="er-roof r"></div><div class="er-round"></div>', things: [
-      { e: '🕸️', name: 'cobweb', x: 7, y: 10, s: 8, free: true, where: 'in the sticky cobweb (eek!)' },
-      { e: '🧥', name: 'coat', x: 24, y: 30, s: 8, free: true, where: 'in the coat pockets' },
+      { e: '🕸️', name: 'cobweb', x: 7, y: 10, s: 8, free: true, where: 'in the sticky cobweb (eek!)', nudge: 'up in a high, sticky corner' },
+      { e: '🧥', name: 'coat', x: 24, y: 30, s: 8, free: true, where: 'in the coat pockets', nudge: 'in something you wear when it\'s cold' },
       { e: '💻', name: 'computer', x: 11, y: 50, s: 7, lock: true, hint: 'that needs a password' },
       { e: '📕', name: 'old book', x: 30, y: 38, s: 4, lock: true, hint: 'with a red cover' },
       { e: '🗃️', name: 'file box', x: 30, y: 51, s: 7, lock: true, hint: 'full of old papers' },
       { e: '🎩', name: 'magic hat', x: 46, y: 35, s: 5, lock: true, hint: 'that a magician pulls rabbits out of' },
       { e: '🗄️', name: 'dresser', x: 46, y: 50, s: 9, lock: true, hint: 'with lots of drawers' },
-      { e: '🕯️', name: 'candle', x: 61, y: 46, s: 4, free: true, where: 'under the candle' },
+      { e: '🕯️', name: 'candle', x: 61, y: 46, s: 4, free: true, where: 'under the candle', nudge: 'under something that glows' },
       { e: '📻', name: 'radio', x: 61, y: 57, s: 6, lock: true, hint: 'that plays music and news' },
       { e: '🔭', name: 'telescope', x: 73, y: 38, s: 8, lock: true, hint: 'for looking at the stars' },
       { e: '🚪', name: 'door', x: 90, y: 37, s: 15, door: true },
       { e: '⏰', name: 'alarm clock', x: 81, y: 57, s: 4, lock: true, hint: 'that rings in the morning' },
-      { e: '🪑', name: 'chair', x: 81, y: 70, s: 8, free: true, where: 'under the chair' },
+      { e: '🪑', name: 'chair', x: 81, y: 70, s: 8, free: true, where: 'under the chair', nudge: 'under something with four legs that you sit on' },
       { e: '🧰', name: 'toolbox', x: 11, y: 86, s: 8, lock: true, hint: 'full of tools' },
       { e: '📦', name: 'crate', x: 27, y: 84, s: 8, lock: true, hint: 'that was shipped from far away' },
-      { e: '🪆', name: 'nesting doll', x: 42, y: 88, s: 5, free: true, where: 'inside the nesting doll' },
+      { e: '🪆', name: 'nesting doll', x: 42, y: 88, s: 5, free: true, where: 'inside the nesting doll', nudge: 'inside a little wooden doll' },
       { e: '🎻', name: 'violin', x: 57, y: 84, s: 8, lock: true, hint: 'you play with a bow' },
       { e: '💰', name: 'money bag', x: 72, y: 88, s: 7, lock: true, hint: 'with a dollar sign on it' },
     ] },
@@ -2739,14 +2739,29 @@ const escapeRoom = (function () {
     const R = rooms[room], t = R.things[i];
     if (t.door) return doorModal();
     if (t.word && !t.open) return lockModal(t);
-    if (t.word) return openModal(head(t, '🔓 The ' + t.name + ' is open.') + '<div class="say">There\'s nothing else inside.</div>' + okBtn());
+    if (t.word) return openModal(head(t, '🔓 The ' + t.name + ' is open.') + '<div class="say">There\'s nothing else inside.</div>' + nudge() + okBtn());
     if (t.free && !t.searched) {
       t.searched = true;
       if (t.holds) return foundModal(t, 'You look ' + t.where + '...');
-      return openModal(head(t, 'You look ' + t.where + '...') + '<div class="say">' + pick(NOTHING) + '</div>' + okBtn());
+      return openModal(head(t, 'You look ' + t.where + '...') + '<div class="say">' + pick(NOTHING) + '</div>' + nudge() + okBtn());
     }
-    if (t.free) return openModal(head(t, 'You already looked ' + t.where + '.') + '<div class="say">Nothing else here.</div>' + okBtn());
-    return openModal(head(t, 'The ' + t.name + ' isn\'t locked.') + '<div class="say">' + pick(NOTHING) + '</div>' + okBtn());
+    if (t.free) return openModal(head(t, 'You already looked ' + t.where + '.') + '<div class="say">Nothing else here.</div>' + nudge() + okBtn());
+    return openModal(head(t, 'The ' + t.name + ' isn\'t locked.') + '<div class="say">' + pick(NOTHING) + '</div>' + nudge() + okBtn());
+  }
+
+  // When he finds nothing: a hint about what to do next.
+  // A clue still hidden: a hint about where (the thing's nudge). A clue not used yet: check the notebook.
+  // All the key pieces: try the door.
+  function nudge() {
+    const R = rooms[room];
+    if (R.got === R.pieces) return '<div class="say">💡 You have the whole key! Try the door 🚪</div>';
+    const hidden = R.things.filter(t => t.free && !t.searched && t.holds);
+    const unused = R.clues.filter(c => c.found && !c.solved).length;
+    const tips = [];
+    if (unused) tips.push(unused === 1 ? 'You have a clue in your 📒 notebook that you haven\'t used yet.'
+      : 'You have ' + unused + ' clues in your 📒 notebook that you haven\'t used yet.');
+    if (hidden.length) tips.push((unused ? 'And another clue is hiding. ' : '') + 'Try looking ' + pick(hidden).nudge + '.');
+    return tips.length ? '<div class="say">💡 ' + esc(tips.join(' ')) + '</div>' : '';
   }
 
   const head = (t, text) => '<div class="head"><span class="e">' + t.e + '</span>' + esc(text) + '</div>';
