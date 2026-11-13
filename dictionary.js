@@ -1,7 +1,7 @@
-// English word list for Word Hunt, used to check bonus words.
+// English word list for Word Blitz, used to check bonus words.
 // Source: ENABLE (Enhanced North American Benchmark Lexicon), public domain, with rude words removed. 172,609 words, all lowercase.
 // Every word in words.js also counts (names like Easter, contractions), so those don't need to be here.
-// index.html loads this file only when Word Hunt is opened, because it is big.
+// index.html loads this file only when Word Blitz is opened, because it is big.
 const DICTIONARY = `
 aa
 aah

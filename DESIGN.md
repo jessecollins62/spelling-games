@@ -8,10 +8,10 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the eight games, tab switching, and the word-list picker. One file, roughly 3,050 lines. |
+| `index.html` | The whole app: styles, the nine games, tab switching, and the word-list menus. One file, roughly 3,300 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
-| `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list with rude words removed) that Word Hunt uses to check bonus words. Big (1.7 MB), so `index.html` loads it only when Word Hunt is opened. |
+| `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list with rude words removed) that Word Blitz uses to check bonus words. Big (1.7 MB), so `index.html` loads it only when Word Blitz is opened. |
 | `puzzles.js` | Riddles (`RIDDLES`) and emoji pictures (`PICTURES`) for Escape Room clues, keyed by lowercase word. Loaded after `meanings.js` by `index.html`. |
 | `print.html` | A printable black-and-white "DECODE" worksheet (Code Breaker on paper) for any list, plus a page of cipher keys. |
 | `LMB-reference.md` | Where the Lindamood-Bell / Seeing Stars word lists come from and how pages map to lists. |
@@ -44,7 +44,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **School lists:** **Long E list**, **Long A list**, **Long O list**, **Long U list**, and **R controlled vowels**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all eight games.
+1. **School lists:** **Long E list**, **Long A list**, **Long O list**, **Long U list**, and **R controlled vowels**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all nine games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
@@ -62,7 +62,7 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list menus (`#listSchool`, `#listLMB`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
+2. **Markup**: title, tab bar (`#tabs`), word-list menus (`#listSchool`, `#listLMB`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordblitzGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
 3. **`words.js`**, **`meanings.js`**, and **`puzzles.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
@@ -174,7 +174,10 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - When the word is found, the message says how many guesses it took and the word is spoken. **Next word ➜** (or Enter) moves on. **🏳️ Show me the word** gives up: it reveals the word and adds it to "Words to practice".
 - No points. The end screen shows how many words were found, the number of guesses for each (and clues used, if any), and words to practice.
 
-### 🔍 Word Hunt: find spelling words hidden in a set of letters
+### ⚡ Word Blitz: find spelling words hidden in a set of letters
+
+(Called Word Hunt until November 2026; its code still uses the `wh` prefix for element ids, and the module is `wordBlitz`.)
+
 
 - Each game picks **about 8 letters** that spell some of the list's words (`chooseQuiz`, `buildQuiz`). Start from a random list word, then keep adding the word that needs the fewest new letters, until there are 8. This is done 40 times (`TRIES`) and one of the better results (at least 75% as many words as the best) is picked at random, so each game is different. If 8 letters can't spell at least 3 list words (`MIN_WORDS`), 9 are allowed (`LETTER_LIMITS`). The quiz is every list word those letters can spell. In testing, most quizzes have 3–5 words (the 20-word Long lists: about 3–7). 🔄 New letters picks a new set.
 - The letters show at the top, once each, A to Z to start. **🔀 Shuffle** mixes them into a new order (always different from the current one), which can help spot words. Letters can be used as many times as needed. Letters can be typed or tapped. Typing a letter that isn't there shows "There's no "z" in your letters."
@@ -185,7 +188,16 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - A found spelling word is spoken. When all are found, the message says so, and he can keep hunting bonus words.
 - **Score:** 1 point per letter (`addPoints`). A spelling-list word counts double, and a word longer than 5 letters (`LONG`) counts double too. Both together is ×4 (`balloon` = 7 × 4 = 28). The message shows the points, like "+28 (×4)". The top bar shows spelling words found / total, bonus words, total words found, and the score.
 - **🏁 I'm done** ends the game at any time. The end screen shows the score, total words found, spelling words found out of the total, the bonus words, and any quiz words not found as "Words to practice".
-- **Dictionary:** `dictionary.js` holds the public-domain ENABLE word list (about 172,600 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages), with about 200 rude words removed. It is loaded only when the Word Hunt tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). A guess made while it is still loading is checked when it finishes. If it can't load (offline), only the list's own words count.
+- **Dictionary:** `dictionary.js` holds the public-domain ENABLE word list (about 172,600 lowercase words, 1.7 MB, about 450 KB as sent by GitHub Pages), with about 200 rude words removed. It is loaded only when the Word Blitz tab is opened (a `<script>` added on the fly, so it also works when `index.html` is opened as a file). A guess made while it is still loading is checked when it finishes. If it can't load (offline), only the list's own words count.
+
+
+### 🔍 Word Hunt: a big word search
+
+- Every word on the list is hidden in one big grid (`build`, `place`). Words go across, down, or slanting down-right (`DIRS`, never backwards), and may cross where letters match. Longest words are placed first at random spots; if they don't all fit after 40 tries, the grid grows by one. Empty squares get random letters. Apostrophes and capitals are dropped in the grid (`dont`, `easter`); the list shows the word as written. Grids come out about 9×9 to 11×11 for 10-word lists and 14×14 to 15×15 for 20-word lists; squares shrink (26–44 px) to fit.
+- **Words to find**, on the right, lists every word alphabetically from the start. Found words turn green with a line through them and a ✓.
+- He clicks the letters of a word in order; they turn orange, and the last one gets an outline. **Clicking the last letter again checks the word.** Clicking an earlier picked letter goes back to it, and ✖ Clear my letters starts over.
+- Right means the picked letters are in a straight line with no gaps (`inLine`, any direction) and spell a word not found yet: its squares turn green, it's crossed off, and the word is spoken. Anything else says **"Try again!"** (or "You already found ..."), shakes, and clears the picked letters.
+- A timer runs. Finding every word wins; the end screen shows the time and the fastest time for this list this session (in memory). 🔄 New puzzle makes a new grid. No points.
 
 
 ### 🚪 Escape Room: search, decode clues, open word locks, escape
@@ -218,7 +230,7 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - **High scores reset on reload** (in memory only).
 - **`fd()` decoys are weak** for very short words and sometimes make real words.
 - **Blaster doesn't work with LMB lists** (they have meanings now, but no lookalikes).
-- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess, Word Hunt, and Escape Room have one).
+- **Typing needs a keyboard** in Code Breaker and Crossword. On an iPad or phone without a keyboard there's no on-screen letter pad yet (Word Guess, Word Blitz, and Escape Room have one; Word Hunt is all clicking).
 - **Cipher code is duplicated** between `index.html` and `print.html`.
 
 ## Adding a word list

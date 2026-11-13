@@ -237,9 +237,9 @@
   #wgKeyBar { display: flex; gap: 8px; margin-top: 12px; touch-action: manipulation; }
   #wgKeyBar button { flex: 1; font-size: 1.1rem; }
   #wgKeyBar #wgEnter { background: #ffd84a; }
-  /* word hunt */
-  #wordhuntGame { max-width: 1100px; }
-  #wordhuntGame.mode > div { width: 100%; text-align: center; }
+  /* word blitz */
+  #wordblitzGame { max-width: 1100px; }
+  #wordblitzGame.mode > div { width: 100%; text-align: center; }
   #whGame, #whEnd { display: none; }
   #whEnd .score { font-size: 3rem; color: #ffd84a; margin: 10px 0; }
   #whLetters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 4px auto 10px; max-width: 900px; touch-action: manipulation; }
@@ -267,6 +267,35 @@
   #whBonus { font-size: 1.15rem; line-height: 1.7; }
   #whBonus span { display: inline-block; background: #ffd84a33; border-radius: 8px; padding: 0 8px; margin: 0 6px 6px 0; }
   #whBonus em { opacity: .7; }
+  /* word hunt (word search) */
+  #wordhuntGame { max-width: 1150px; }
+  #wordhuntGame.mode > div { width: 100%; text-align: center; }
+  #wsGame, #wsEnd { display: none; }
+  #wsEnd .score { font-size: 3rem; color: #ffd84a; margin: 10px 0; }
+  #wsMain { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; align-items: flex-start; }
+  #wsGrid {
+    display: grid; gap: 3px; padding: 10px; border-radius: 16px; background: rgba(0,0,0,.3);
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .ws-cell {
+    width: var(--cell); height: var(--cell); display: flex; align-items: center; justify-content: center;
+    background: #fff6d0; color: #3a2400; border-radius: 7px; font-weight: bold; font-size: calc(var(--cell) * .6);
+    cursor: pointer;
+  }
+  @media (hover: hover) { .ws-cell:hover { background: #ffe9a0; } }
+  .ws-cell.found { background: #8fe0a3; color: #1d4d2a; }
+  .ws-cell.sel { background: #ffbf1f; color: #3a2400; box-shadow: inset 0 0 0 3px #fff; }
+  .ws-cell.last { box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #ff8a00; }
+  #wsGrid.wrong .ws-cell.sel { background: #ffb3b3; animation: shake 0.4s; }
+  #wsSide { min-width: 220px; text-align: left; background: rgba(0,0,0,.25); border-radius: 18px; padding: 14px 18px; }
+  #wsSide h3 { color: #ffd84a; margin: 0 0 8px; font-size: 1.2rem; }
+  #wsList { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 22px; }
+  #wsList li { font-size: 1.3rem; font-weight: bold; padding: 2px 0; break-inside: avoid; }
+  #wsList li.found { color: #8fe0a3; text-decoration: line-through; text-decoration-thickness: 3px; }
+  #wsList li.found::after { content: ' ✓'; text-decoration: none; display: inline-block; }
+  #wsMsg { font-size: 1.5rem; min-height: 1.6em; margin: 10px 0 4px; }
+  #wsHow { font-size: 1.05rem; opacity: .85; margin-bottom: 8px; }
+  #wsClear { font-size: 1rem; padding: 7px 16px; margin-top: 12px; background: #c9b3ff; box-shadow: 0 4px 0 #6b4bb5; }
   /* escape room */
   #escapeGame { max-width: 1250px; }
   #escapeGame.mode > div { width: 100%; text-align: center; }
@@ -379,6 +408,7 @@
     <button id="tabBlaster">☄️ Blaster</button>
     <button id="tabCrossword">✏️ Crossword</button>
     <button id="tabWordGuess">🟩 Word Guess</button>
+    <button id="tabWordBlitz">⚡ Word Blitz</button>
     <button id="tabWordHunt">🔍 Word Hunt</button>
     <button id="tabEscape">🚪 Escape Room</button>
   </div>
@@ -583,7 +613,7 @@
     </div>
   </div>
 
-  <div id="wordhuntGame" class="mode" style="display:none">
+  <div id="wordblitzGame" class="mode" style="display:none">
     <div id="whStart">
       <p style="font-size:1.4rem">You get about 8 letters, and some of your spelling words are hiding in them. Can you find them all?<br>
         You can use each letter as many times as you need.<br>
@@ -623,6 +653,41 @@
       <div class="score" id="whEndScore"></div>
       <div id="whSummary" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
       <button id="whAgain">🔄 New letters</button>
+    </div>
+  </div>
+
+  <div id="wordhuntGame" class="mode" style="display:none">
+    <div id="wsStart">
+      <p style="font-size:1.4rem">All the words on your list are hiding in a big word search!<br>
+        They go across ➡️, down ⬇️, or slanting down ↘️.<br>
+        Click the letters of a word in order. Click the last letter again to check it.<br>
+        Find every word to win!</p>
+      <div id="wsStartBest" style="font-size:1.3rem; margin-bottom:14px"></div>
+      <button id="wsGo">Start!</button>
+    </div>
+    <div id="wsGame">
+      <div class="hud">
+        <div>Found <b id="wsCount">0</b> / <b id="wsTotal">0</b></div>
+        <div>Time <b id="wsTime">0:00</b></div>
+      </div>
+      <div id="wsHow">Click the letters in order, then click the last letter again to check the word.</div>
+      <div id="wsMain">
+        <div>
+          <div id="wsGrid"></div>
+          <div id="wsMsg"></div>
+        </div>
+        <div id="wsSide">
+          <h3>Words to find</h3>
+          <ul id="wsList"></ul>
+          <button id="wsClear">✖ Clear my letters</button>
+        </div>
+      </div>
+    </div>
+    <div id="wsEnd">
+      <div style="font-size:2rem">🎉 You found every word! 🎉</div>
+      <div class="score" id="wsFinalTime"></div>
+      <div id="wsBestMsg" style="font-size:1.4rem; margin:8px 0 20px"></div>
+      <button id="wsAgain">🔄 New puzzle</button>
     </div>
   </div>
 
@@ -2259,8 +2324,8 @@ const wordGuess = (function () {
   return { stop };
 })();
 
-// ===== Word hunt =====
-const wordHunt = (function () {
+// ===== Word blitz =====
+const wordBlitz = (function () {
   const MAX_LEN = 15;  // longest word that can be typed
   const MIN_BONUS = 3; // bonus words need at least this many letters
   const LONG = 5;      // words longer than this score double
@@ -2512,6 +2577,183 @@ const wordHunt = (function () {
   show('whStart');
 
   return { stop, loadDictionary };
+})();
+
+// ===== Word hunt (a big word search) =====
+const wordSearch = (function () {
+  const panels = ['wsStart', 'wsGame', 'wsEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+  const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+  const DIRS = [[0, 1], [1, 0], [1, 1]]; // across, down, slanting down-right (never backwards)
+  const bestTimes = {}; // list name -> fastest time in ms, this session only
+
+  let size, grid, words, found, foundCells, sel, startTime, tick, running = false, msgTimer;
+
+  // --- Building the puzzle ---
+  // Place the longest words first, each at a random spot and direction where it fits
+  // (crossing other words only where the letters match). If a size doesn't work, try a bigger grid.
+  function build(keys) {
+    const longest = Math.max(...keys.map(k => k.length));
+    const letters = keys.reduce((n, k) => n + k.length, 0);
+    for (let n = Math.max(longest, Math.ceil(Math.sqrt(letters * 1.8)), 6); ; n++) {
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const g = new Array(n * n).fill('');
+        const order = shuffle(keys).sort((a, b) => b.length - a.length);
+        if (order.every(k => place(g, n, k))) {
+          for (let i = 0; i < g.length; i++) if (!g[i]) g[i] = ALPHABET[Math.floor(Math.random() * 26)];
+          return { n, g };
+        }
+      }
+    }
+  }
+  function place(g, n, key) {
+    for (let t = 0; t < 300; t++) {
+      const [dr, dc] = DIRS[Math.floor(Math.random() * DIRS.length)];
+      const r0 = Math.floor(Math.random() * (n - dr * (key.length - 1)));
+      const c0 = Math.floor(Math.random() * (n - dc * (key.length - 1)));
+      const cells = [...key].map((ch, i) => (r0 + dr * i) * n + c0 + dc * i);
+      if (cells.every((c, i) => g[c] === '' || g[c] === key[i])) {
+        cells.forEach((c, i) => { g[c] = key[i]; });
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // --- Game ---
+  function newGame() {
+    // the word as written (Easter, don't) and the letters hidden in the grid (easter, dont)
+    const seen = new Set();
+    words = [];
+    for (const w of WORDS) {
+      const key = w.word.toLowerCase().replace(/[^a-z]/g, '');
+      if (key && !seen.has(key)) { seen.add(key); words.push({ word: w.word, key }); }
+    }
+    words.sort((a, b) => a.key.localeCompare(b.key));
+    const puzzle = build(words.map(w => w.key));
+    size = puzzle.n; grid = puzzle.g;
+    found = new Set(); foundCells = new Set(); sel = [];
+    running = true;
+    startTime = Date.now();
+    clearInterval(tick);
+    tick = setInterval(showTime, 250);
+    showTime();
+    $('wsTotal').textContent = words.length;
+    say('');
+    show('wsGame');
+    drawGrid();
+    render();
+  }
+
+  function stop() {
+    running = false;
+    clearInterval(tick);
+    clearTimeout(msgTimer);
+    show('wsStart');
+    showBest();
+  }
+
+  const clock = ms => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  function showTime() { $('wsTime').textContent = clock(Date.now() - startTime); }
+  const listName = () => WORD_LISTS.find(l => l.words === WORDS)?.name;
+  function showBest() {
+    const name = listName();
+    $('wsStartBest').textContent = bestTimes[name] ? '⏱️ Fastest time for ' + name + ': ' + clock(bestTimes[name]) : '';
+  }
+
+  function drawGrid() {
+    const el = $('wsGrid');
+    // squares shrink for big grids so the whole puzzle fits
+    el.style.setProperty('--cell', Math.max(26, Math.min(44, Math.floor(620 / size))) + 'px');
+    el.style.gridTemplateColumns = 'repeat(' + size + ', auto)';
+    el.innerHTML = '';
+    grid.forEach((ch, i) => {
+      const c = document.createElement('div');
+      c.className = 'ws-cell';
+      c.textContent = ch;
+      c.addEventListener('pointerdown', e => { e.preventDefault(); clickCell(i); });
+      el.appendChild(c);
+    });
+  }
+
+  function render() {
+    const cells = $('wsGrid').children;
+    for (let i = 0; i < cells.length; i++) {
+      const at = sel.indexOf(i);
+      cells[i].classList.toggle('found', foundCells.has(i));
+      cells[i].classList.toggle('sel', at >= 0);
+      cells[i].classList.toggle('last', at >= 0 && at === sel.length - 1);
+    }
+    $('wsCount').textContent = found.size;
+    $('wsList').innerHTML = words.map(w => '<li' + (found.has(w.key) ? ' class="found"' : '') + '>' + w.word.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</li>').join('');
+  }
+
+  function say(text) {
+    clearTimeout(msgTimer);
+    $('wsMsg').textContent = text;
+  }
+
+  // Click letters in order. Clicking the last one again checks the word.
+  // Clicking an earlier picked letter goes back to that letter.
+  function clickCell(i) {
+    if (!running) return;
+    $('wsGrid').classList.remove('wrong');
+    const at = sel.indexOf(i);
+    if (at >= 0 && at === sel.length - 1) return check();
+    if (at >= 0) sel = sel.slice(0, at + 1);
+    else sel.push(i);
+    say('');
+    render();
+  }
+
+  // Right if the picked letters are in a straight line (no gaps) and spell a word not found yet
+  function check() {
+    const guess = sel.map(i => grid[i]).join('');
+    const w = words.find(x => x.key === guess);
+    if (w && inLine(sel) && !found.has(w.key)) {
+      found.add(w.key);
+      sel.forEach(i => foundCells.add(i));
+      sel = [];
+      speak(w.word);
+      render();
+      if (found.size === words.length) { say('🎉 You found them all!'); msgTimer = setTimeout(finish, 1200); }
+      else say('✅ You found "' + w.word + '"!');
+      return;
+    }
+    say(w && found.has(w.key) ? 'You already found "' + w.word + '". Try again!' : 'Try again!');
+    const el = $('wsGrid');
+    el.classList.remove('wrong');
+    void el.offsetWidth; // restart the shake animation
+    el.classList.add('wrong');
+    msgTimer = setTimeout(() => { el.classList.remove('wrong'); sel = []; render(); }, 600);
+  }
+
+  function inLine(cells) {
+    if (cells.length < 2) return true;
+    const rc = i => [Math.floor(i / size), i % size];
+    const [r0, c0] = rc(cells[0]), [r1, c1] = rc(cells[1]);
+    const dr = r1 - r0, dc = c1 - c0;
+    if (Math.abs(dr) > 1 || Math.abs(dc) > 1) return false;
+    return cells.every((c, k) => { const [r, cc] = rc(c); return r === r0 + dr * k && cc === c0 + dc * k; });
+  }
+
+  function finish() {
+    running = false;
+    clearInterval(tick);
+    const ms = Date.now() - startTime;
+    const name = listName(), best = bestTimes[name];
+    if (best === undefined || ms < best) bestTimes[name] = ms;
+    show('wsEnd');
+    $('wsFinalTime').textContent = '⏱️ ' + clock(ms);
+    $('wsBestMsg').textContent = best === undefined ? '' : ms < best ? '🏆 New fastest time!' : 'Fastest time: ' + clock(best);
+  }
+
+  $('wsClear').onclick = e => { e.currentTarget.blur(); sel = []; say(''); $('wsGrid').classList.remove('wrong'); render(); };
+  $('wsGo').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('wsAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
+  show('wsStart');
+
+  return { stop };
 })();
 
 // ===== Escape room =====
@@ -3004,7 +3246,8 @@ const GAMES = {
   blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  round: 'blGame', stop: () => blaster.stop() },
   crossword: { tab: 'tabCrossword', panel: 'crosswordGame', round: 'cwGame', stop: () => crossword.stop() },
   wordguess: { tab: 'tabWordGuess', panel: 'wordguessGame', round: 'wgGame', stop: () => wordGuess.stop() },
-  wordhunt: { tab: 'tabWordHunt', panel: 'wordhuntGame', round: 'whGame', stop: () => wordHunt.stop() },
+  wordblitz: { tab: 'tabWordBlitz', panel: 'wordblitzGame', round: 'whGame', stop: () => wordBlitz.stop() },
+  wordhunt:  { tab: 'tabWordHunt', panel: 'wordhuntGame', round: 'wsGame', stop: () => wordSearch.stop() },
   escape:   { tab: 'tabEscape', panel: 'escapeGame', round: 'erGame', stop: () => escapeRoom.stop() },
 };
 function showTab(which) {
@@ -3015,7 +3258,7 @@ function showTab(which) {
     // leaving a round in progress sends that game back to its start screen
     if (!on && g.stop) g.stop();
   }
-  if (which === 'wordhunt') wordHunt.loadDictionary(); // start loading it before Start is pressed
+  if (which === 'wordblitz') wordBlitz.loadDictionary(); // start loading it before Start is pressed
 }
 for (const [name, g] of Object.entries(GAMES)) $(g.tab).onclick = () => showTab(name);
 
