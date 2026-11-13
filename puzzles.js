@@ -93,11 +93,33 @@ const RIDDLES = {
   true: "The opposite of false. \"The sky is blue\" is ___.",
   blue: "I'm the color of the sky and the ocean. What color am I?",
   clue: "A detective hunts for me to solve a mystery. Footprints can be one!",
+  // R-controlled vowels
+  apart: "The opposite of together. Pull the two pieces of the puzzle ___!",
+  scarf: "When it's snowy, you wrap me around your neck to keep warm. What am I?",
+  charm: "I'm a tiny lucky thing that dangles from a bracelet. What am I?",
+  partner: "In a three-legged race, you need one of these to run with you!",
+  starve: "If you didn't eat all day, you might groan, \"I'm going to ___!\"",
+  perfect: "100 out of 100 on your test! No mistakes at all. It's ___!",
+  every: "Not some, but all of them! You brush your teeth ___ single day.",
+  power: "When all the lights go out in a storm, the ___ is out.",
+  thunder: "BOOM! I'm the loud rumble you hear after lightning flashes. What am I?",
+  afternoon: "After lunch, but before dinner. What part of the day is it?",
+  corner: "A square has four of me, where two sides meet. What am I?",
+  world: "It's huge and round, and every country is on it. You could sail around the ___!",
+  morning: "The sun comes up, the rooster crows, and you eat breakfast. What time of day is it?",
+  worst: "The opposite of best. \"That was the ___ day ever!\"",
+  order: "At a restaurant, you tell the waiter what you want to eat. You place your ___.",
+  curve: "A road that bends around a hill doesn't go straight. It has a ___.",
+  church: "A building with a steeple and a bell, where people go to sing and pray.",
+  nurse: "I work in a hospital and help the doctor take care of sick people. Who am I?",
+  purple: "Mix red paint and blue paint and you get this color. Grapes are often this color!",
+  turtle: "I'm slow, I live in a shell, and I can pull my head inside. What am I?",
+
 };
 
 const PICTURES = {
   // animals
-  dog: "🐶", cat: "🐱", fish: "🐟", bird: "🐦", horse: "🐴", cow: "🐮", bear: "🐻", raccoon: "🦝",
+  dog: "🐶", cat: "🐱", turtle: "🐢", fish: "🐟", bird: "🐦", horse: "🐴", cow: "🐮", bear: "🐻", raccoon: "🦝",
   // people
   baby: "👶", girl: "👧", boy: "👦", man: "👨", woman: "👩", family: "👪",
   king: "🤴", queen: "👸", teacher: "🧑‍🏫", doctor: "🧑‍⚕️", farmer: "🧑‍🌾", scientist: "🧑‍🔬", student: "🧑‍🎓",
@@ -115,7 +137,7 @@ const PICTURES = {
   // places
   house: "🏠", school: "🏫", church: "⛪", bank: "🏦", store: "🏪", city: "🏙️", camp: "🏕️",
   // things
-  book: "📖", map: "🗺️", key: "🔑", bell: "🔔", ball: "⚽", hat: "🎩", shoe: "👟", dress: "👗", clothes: "👕👖",
+  book: "📖", map: "🗺️", key: "🔑", bell: "🔔", ball: "⚽", hat: "🎩", shoe: "👟", dress: "👗", clothes: "👕👖", scarf: "🧣",
   chair: "🪑", bed: "🛏️", door: "🚪", window: "🪟", box: "📦", paper: "📄", letter: "✉️", picture: "🖼️",
   paint: "🎨", crayon: "🖍️", balloon: "🎈", ring: "💍", radio: "📻", music: "🎵", money: "💰", dollar: "💵",
   light: "💡", gas: "⛽", chart: "📊", circle: "⭕", triangle: "🔺",
@@ -126,5 +148,5 @@ const PICTURES = {
   one: "1️⃣", two: "2️⃣", three: "3️⃣", four: "4️⃣", five: "5️⃣", six: "6️⃣", seven: "7️⃣", eight: "8️⃣",
   ten: "🔟", hundred: "💯",
   // colors
-  red: "🟥", green: "🟩", blue: "🟦", yellow: "🟨", black: "⬛", white: "⬜", brown: "🟫",
+  red: "🟥", green: "🟩", blue: "🟦", yellow: "🟨", black: "⬛", white: "⬜", brown: "🟫", purple: "🟪",
 };

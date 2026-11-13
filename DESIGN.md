@@ -8,7 +8,7 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the eight games, tab switching, and the word-list picker. One file, roughly 2,850 lines. |
+| `index.html` | The whole app: styles, the eight games, tab switching, and the word-list picker. One file, roughly 3,050 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
 | `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list with rude words removed) that Word Hunt uses to check bonus words. Big (1.7 MB), so `index.html` loads it only when Word Hunt is opened. |
@@ -27,7 +27,7 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 ## Word lists (`words.js`)
 
-`WORD_LISTS` is an array of `{ name, words }`. The picker shows lists in array order. On load, the game page starts on the **last list used in this browser**; with none saved, it starts on **LMB 31** (see List picker below).
+`WORD_LISTS` is an array of `{ name, words }`. The page has **two list menus**: **School lists** (every list whose name doesn't start with "LMB") and **LMB lists**, each in array order. On load, the game page starts on the **last list used in this browser**; with none saved, it starts on **LMB 31** (see List picker below).
 
 Each word entry:
 
@@ -44,7 +44,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **Long E list**, **Long A list**, **Long O list**, and **Long U list**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all eight games.
+1. **School lists:** **Long E list**, **Long A list**, **Long O list**, **Long U list**, and **R controlled vowels**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all eight games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
@@ -62,7 +62,7 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list picker (`#listPick`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
+2. **Markup**: title, tab bar (`#tabs`), word-list menus (`#listSchool`, `#listLMB`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
 3. **`words.js`**, **`meanings.js`**, and **`puzzles.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
@@ -70,8 +70,8 @@ Order in the file:
    - `speak(text)` / `canSpeak`: browser text-to-speech (Web Speech API) at rate 0.85.
 4. **One script/module per game**. Each is an IIFE (`const curtain = (function () { ... })()`) that keeps its own state and returns `{ stop }`.
 5. **Tab switching**: the `GAMES` table maps each game to its tab button, panel, and `stop()`. Switching tabs calls `stop()` on every game you're leaving, which sends it back to its start screen.
-6. **List picker**: changing the list sets `WORDS`, saves the list's **name** in `localStorage` (key `spellingGames.list`), and calls `stop()` on every game. On load, the saved name is used if it matches a list; otherwise `DEFAULT_LIST` (`LMB 31`), or the first list if that's missing. Saving by name means adding or reordering lists doesn't change his choice. Storage reads and writes are wrapped in `try`, so a blocked-storage browser just falls back to the default. `print.html` has its own picker and doesn't use the saved list.
-7. **Arrow keys**: ↑/↓ move to the previous/next list whenever no round is being played (start and end screens). During a round they do nothing. Each `GAMES` entry's `round` field names its in-round panel, which is how the page tells.
+6. **List menus**: two `<select>`s (`MENUS`): School lists and LMB lists (`isLMB` = name starts with "LMB"). Each starts with a "Pick a list" option. Picking a list in one menu sets the other back to "Pick a list" (`chooseList`, `showListInMenus`); choosing "Pick a list" by itself changes nothing. Choosing a list sets `WORDS`, saves the list's **name** in `localStorage` (key `spellingGames.list`), and calls `stop()` on every game. On load, the saved name is used if it matches a list; otherwise `DEFAULT_LIST` (`LMB 31`), or the first list if that's missing. Saving by name means adding or reordering lists doesn't change his choice. Storage reads and writes are wrapped in `try`, so a blocked-storage browser just falls back to the default. `print.html` has its own picker and doesn't use the saved list.
+7. **Arrow keys**: ↑/↓ move to the previous/next list in the menu being used (they stop at its ends) whenever no round is being played (start and end screens). During a round they do nothing. Each `GAMES` entry's `round` field names its in-round panel, which is how the page tells.
 
 ### The game module pattern
 
