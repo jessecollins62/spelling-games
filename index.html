@@ -268,66 +268,105 @@
   #whBonus span { display: inline-block; background: #ffd84a33; border-radius: 8px; padding: 0 8px; margin: 0 6px 6px 0; }
   #whBonus em { opacity: .7; }
   /* escape room */
-  #escapeGame { max-width: 1000px; }
+  #escapeGame { max-width: 1250px; }
   #escapeGame.mode > div { width: 100%; text-align: center; }
-  #erGame, #erEnd, #erPuzzle { display: none; }
+  #erGame, #erEnd { display: none; }
   #erEnd .score { font-size: 3rem; color: #ffd84a; margin: 10px 0; }
   #erEnd .big { font-size: 5rem; line-height: 1.1; }
-  #erRoom {
-    border-radius: 18px; padding: 18px; box-shadow: 0 8px 0 #0005;
-    background: linear-gradient(#5b3e8f 0 68%, #7a4a26 68% 100%); /* wall, then wooden floor */
+  #erMain { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; align-items: flex-start; }
+  /* The room picture. Sizes inside use cqw (percent of the room's width) so it scales with the screen. */
+  #erScene {
+    position: relative; flex: 1 1 600px; max-width: 880px; aspect-ratio: 16 / 10; container-type: inline-size;
+    border-radius: 18px; overflow: hidden; box-shadow: 0 8px 0 #0005; border: 4px solid #2a1650;
   }
-  #erRoomTop { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
-  #erRoomTop .tip { font-size: 1.15rem; text-align: left; flex: 1; min-width: 220px; }
-  #erRoomName { font-size: 1.5rem; font-weight: bold; color: #ffd84a; margin-bottom: 4px; }
-  #erRoom.attic { background: linear-gradient(#2f5a5a 0 68%, #5a4632 68% 100%); } /* dusty teal walls, old boards */
-  #erDoor {
-    width: 130px; min-height: 170px; border-radius: 60px 60px 6px 6px; background: #8b5a2b; border: 6px solid #5a3815;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px 6px;
-    box-shadow: inset 0 0 0 4px #a8743d;
+  #erScene.living {
+    background:
+      linear-gradient(#4a2e14, #4a2e14) 0 56% / 100% 1.6% no-repeat,                          /* baseboard */
+      repeating-linear-gradient(90deg, #9a6a3a 0 9.5%, #7d5229 9.5% 10%) 0 100% / 100% 44% no-repeat, /* floorboards */
+      repeating-linear-gradient(90deg, #7a5bb8 0 3%, #6f51ad 3% 6%);                           /* striped wallpaper */
   }
-  #erDoor .lock { font-size: 2.4rem; }
-  #erDoor .left { font-size: 1rem; font-weight: bold; }
-  #erKeys { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-size: 1.1rem; max-width: 110px; }
-  #erKeys .off { filter: grayscale(1) brightness(.6); opacity: .5; }
-  #erObjects { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; }
-  .er-obj {
-    position: relative; padding: 10px 4px 8px; border-radius: 14px; background: #0003; color: #fff; box-shadow: 0 4px 0 #0005;
-    display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 1rem;
+  #erScene.attic {
+    background:
+      linear-gradient(#3b2a1c, #3b2a1c) 0 56% / 100% 1.6% no-repeat,
+      repeating-linear-gradient(90deg, #6b5338 0 12.5%, #594429 12.5% 13%) 0 100% / 100% 44% no-repeat,
+      repeating-linear-gradient(0deg, #3f6b6b 0 7%, #376060 7% 7.6%);                          /* wooden wall planks */
   }
-  .er-obj .e { font-size: 2.8rem; line-height: 1.1; }
-  @media (hover: hover) { .er-obj:not(.done):hover { background: #ffd84a44; } }
-  .er-obj.done { background: #2f9e4f55; box-shadow: 0 4px 0 #1d6b33; cursor: default; }
-  .er-obj.done .e { opacity: .45; }
-  .er-obj .got { position: absolute; top: 4px; right: 6px; font-size: 1.3rem; }
-  #erPuzzle { background: #0004; border: 2px solid #ffd84a55; border-radius: 18px; padding: 16px; }
-  #erPuzzleHead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-  #erPuzzleHead button { font-size: 1rem; padding: 7px 16px; box-shadow: 0 4px 0 #b88f00; }
-  #erBack { background: #c9b3ff; box-shadow: 0 4px 0 #6b4bb5 !important; }
-  #erHint { background: #b9f2a6; box-shadow: 0 4px 0 #5ea84a !important; }
-  #erType { font-size: 1.2rem; color: #ffd84a; font-weight: bold; }
-  #erClue { font-size: 1.6rem; line-height: 1.4; margin: 10px auto 16px; max-width: 760px; min-height: 2em; }
-  #erClue .pic { font-size: 6rem; line-height: 1.1; }
-  #erClue button { font-size: 1rem; padding: 5px 12px; margin-left: 8px; vertical-align: middle; box-shadow: 0 3px 0 #b88f00; }
-  #erAnswer { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 6px 0; }
-  .er-box {
-    width: 58px; height: 62px; border: 3px dashed #ffd84a; border-radius: 12px; background: rgba(255,216,74,.08);
-    display: flex; align-items: center; justify-content: center; font-size: 2.3rem; font-weight: bold; user-select: none;
+  .er-window { position: absolute; left: 40%; top: 9%; width: 15%; height: 28%; border: 1cqw solid #f3e6c8;
+    background: linear-gradient(#f3e6c8, #f3e6c8) 50% 0 / .6cqw 100% no-repeat, linear-gradient(#f3e6c8, #f3e6c8) 0 50% / 100% .6cqw no-repeat,
+      linear-gradient(#7fc8ff, #d8f0ff); }
+  .er-round { position: absolute; left: 43%; top: 10%; width: 12cqw; height: 12cqw; border-radius: 50%; border: 1cqw solid #c9a66b;
+    background: linear-gradient(#c9a66b, #c9a66b) 50% 0 / .6cqw 100% no-repeat, linear-gradient(#c9a66b, #c9a66b) 0 50% / 100% .6cqw no-repeat,
+      radial-gradient(circle at 30% 30%, #fff8c0 0 8%, #1b2a5a 9% 100%); }
+  .er-rug { position: absolute; left: 30%; top: 62%; width: 42%; height: 22%; border-radius: 50%;
+    background: radial-gradient(ellipse, #c0392b 0 45%, #e8b04a 46% 52%, #a52f22 53% 100%); opacity: .9; }
+  .er-roof { position: absolute; top: 0; width: 34%; height: 30%; background: #2a1a10; }
+  .er-roof.l { left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .er-roof.r { right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .er-thing {
+    position: absolute; transform: translate(-50%, -50%); background: none; box-shadow: none; padding: 0; border-radius: 0;
+    color: #fff; line-height: 1; font-size: calc(var(--s) * 1cqw); display: flex; flex-direction: column; align-items: center;
+    filter: drop-shadow(0 .4cqw 0 #0007);
   }
-  .er-box.filled { border-style: solid; background: #fff6d0; color: #3a2400; }
-  .er-box.ghost { color: rgba(255,255,255,.4); } /* a hint letter, shown faintly until he types over it */
-  .er-box.given { width: 20px; border: none; background: none; }
-  .er-box.next { border-color: #fff; box-shadow: 0 0 0 4px rgba(255,216,74,.5); }
-  #erAnswer.wrong { animation: shake 0.4s; }
-  #erAnswer.wrong .er-box { border-color: #ff6b6b; }
-  #erAnswer.good .er-box { border-color: #5be37d; background: #bff5cb; color: #1d6b33; }
-  #erMsg { font-size: 1.5rem; min-height: 1.6em; margin: 8px 0; }
-  #erPad { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 720px; margin: 6px auto 0; touch-action: manipulation; }
-  #erPad button {
-    width: 46px; height: 48px; padding: 0; font-size: 1.4rem; border-radius: 9px;
-    background: #fff3c4; color: #3a2400; box-shadow: 0 4px 0 #b88f00;
+  .er-thing:active { transform: translate(-50%, -50%) scale(.95); box-shadow: none; }
+  @media (hover: hover) { .er-thing:hover { transform: translate(-50%, -50%) scale(1.08); } }
+  .er-thing .lbl { font-size: 1.25cqw; font-weight: bold; background: #000a; border-radius: .6cqw; padding: .2cqw .6cqw; margin-top: .2cqw; white-space: nowrap; }
+  .er-thing .badge { position: absolute; right: -.15em; top: -.15em; font-size: .32em; }
+  .er-thing.done > .e { opacity: .55; }
+  /* clue notebook */
+  #erBook { flex: 0 1 330px; min-width: 260px; background: rgba(0,0,0,.25); border-radius: 18px; padding: 12px; text-align: left; max-height: 80vh; overflow: auto; }
+  #erBook h3 { color: #ffd84a; margin: 0 0 8px; font-size: 1.2rem; }
+  .er-empty { opacity: .8; font-size: 1rem; }
+  .er-card { background: #fff3c4; color: #3a2400; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; font-size: 1.1rem; line-height: 1.35; text-align: left; }
+  .er-card .to { font-weight: bold; color: #8a4b00; font-size: .95rem; margin-bottom: 6px; }
+  .er-card .to .mini { font-size: 1.6rem; vertical-align: middle; }
+  .er-card .kind { font-weight: bold; }
+  .er-card button { font-size: .85rem; padding: 3px 10px; margin: 4px 4px 0 0; box-shadow: 0 3px 0 #b88f00; border-radius: 8px; }
+  .er-card .pic { font-size: 3.4rem; line-height: 1.1; text-align: center; }
+  .er-card.solved { background: #cfe9d2; color: #1d4d2a; padding: 6px 12px; font-size: 1rem; }
+  .er-ws { display: inline-grid; gap: 2px; margin: 4px 0; user-select: none; }
+  .er-ws span { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #fffbe6;
+    border: 1px solid #d8c48a; border-radius: 4px; font-weight: bold; font-size: .95rem; cursor: pointer; }
+  .er-ws span.on { background: #ffd84a; }
+  .er-tiles span { display: inline-block; width: 32px; height: 36px; line-height: 36px; text-align: center; margin: 2px;
+    background: #ffe08a; border-radius: 6px; font-size: 1.4rem; font-weight: bold; box-shadow: 0 3px 0 #b88f00; }
+  .er-code { display: flex; flex-wrap: wrap; gap: 6px; zoom: .5; margin: 6px 0; }
+  .er-code .er-gap { font-size: 3rem; font-weight: bold; align-self: center; }
+  .er-keybox { display: none; zoom: .6; margin-top: 6px; }
+  .er-keybox.show { display: block; }
+  /* the pop-up for a lock, a search, or the door */
+  #erModal { position: fixed; inset: 0; background: #000b; z-index: 50; display: none; align-items: center; justify-content: center; }
+  #erModal .panel {
+    position: relative; background: #2d1b5c; border: 3px solid #ffd84a; border-radius: 18px; width: 94vw; max-width: 760px;
+    max-height: 92vh; overflow: auto; padding: 18px 20px; text-align: center;
   }
-  #erPad button.wide { width: 100px; font-size: 1.1rem; }
+  #erModal .head { font-size: 1.6rem; font-weight: bold; margin-bottom: 4px; }
+  #erModal .head .e { font-size: 3.2rem; vertical-align: middle; margin-right: 8px; }
+  #erModal .say { font-size: 1.3rem; margin: 8px 0 12px; }
+  #erModal .close { position: absolute; top: 10px; right: 10px; font-size: 1rem; padding: 6px 14px; background: #c9b3ff; box-shadow: 0 4px 0 #6b4bb5; }
+  #erModal .ok { margin-top: 12px; }
+  #erModal .er-card { max-width: 560px; margin: 10px auto; }
+  #erModal .er-code { zoom: .7; }
+  #erModal .er-ws span { width: 30px; height: 30px; font-size: 1.1rem; }
+  #erModal .yourClues { margin-top: 16px; border-top: 2px dashed #ffd84a66; padding-top: 10px; }
+  #erModal .yourClues h4 { color: #ffd84a; margin: 0 0 6px; }
+  .er-dials { display: inline-flex; gap: 6px; padding: 14px; background: #3a3a46; border-radius: 14px; border: 4px solid #9aa0ad; margin: 4px 0; }
+  .er-dial {
+    width: 50px; height: 64px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(#b9bec9, #fff 40%, #fff 60%, #b9bec9); color: #222; font-size: 2.2rem; font-weight: bold;
+    box-shadow: inset 0 0 0 2px #777; cursor: pointer; user-select: none;
+  }
+  .er-dial.next { box-shadow: inset 0 0 0 2px #777, 0 0 0 3px #ffd84a; }
+  .er-dial.ghost { color: #bbb; }
+  .er-dial.given { width: 18px; background: none; box-shadow: none; color: #fff; cursor: default; }
+  .er-dials.wrong { animation: shake 0.4s; }
+  .er-dials.wrong .er-dial:not(.given) { background: linear-gradient(#e7a3a3, #ffe0e0 40%, #ffe0e0 60%, #e7a3a3); }
+  .er-dials.good .er-dial:not(.given) { background: linear-gradient(#8fd8a0, #e0ffe7 40%, #e0ffe7 60%, #8fd8a0); }
+  #erLockMsg { font-size: 1.3rem; min-height: 1.5em; margin: 6px 0; }
+  .er-tools button { font-size: 1rem; padding: 7px 16px; margin: 4px; }
+  .er-tools .hint { background: #b9f2a6; box-shadow: 0 4px 0 #5ea84a; }
+  .er-pad { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; max-width: 640px; margin: 8px auto 0; touch-action: manipulation; }
+  .er-pad button { width: 42px; height: 44px; padding: 0; font-size: 1.3rem; border-radius: 8px; background: #fff3c4; color: #3a2400; box-shadow: 0 4px 0 #b88f00; }
+  .er-pad button.wide { width: 92px; font-size: 1rem; }
 </style>
 </head>
 <body>
@@ -586,37 +625,24 @@
 
   <div id="escapeGame" class="mode" style="display:none">
     <div id="erStart">
-      <p style="font-size:1.4rem">🔒 Oh no! You're locked in a mystery room! 🔒<br>
-        There are two rooms. Every object hides a puzzle: a riddle, a picture, or a secret note.<br>
-        The answer is always a word from your spelling list. Spell it right to find a 🔑 key.<br>
-        Find all the keys in the first room to get into the second room.<br>
-        Find all the keys in the second room to escape!</p>
+      <p style="font-size:1.4rem">🔒 Oh no! You're locked in! 🔒<br>
+        Search the room for clues: look in, under, and behind things.<br>
+        Every clue leads to a word from your spelling list, and tells you which lock it opens.<br>
+        Spell the word on the lock to open it. Inside you'll find more clues, and pieces of the door key!<br>
+        Get through both rooms to escape.</p>
       <div id="erStartBest" style="font-size:1.3rem; margin-bottom:14px"></div>
       <button id="erGo">Start!</button>
     </div>
     <div id="erGame">
       <div class="hud">
-        <div>Room <b id="erRoomNum">1</b> / 2</div>
-        <div>Keys <b id="erGot">0</b> / <b id="erTotal">0</b></div>
+        <div>Room <b id="erRoomNum">1</b> / <b id="erRooms">2</b></div>
+        <div>Locks opened <b id="erGot">0</b> / <b id="erTotal">0</b></div>
+        <div>Key pieces <b id="erPieces">0</b> / <b id="erPiecesTotal">0</b></div>
         <div>Time <b id="erTime">0:00</b></div>
       </div>
-      <div id="erRoom">
-        <div id="erRoomTop">
-          <div class="tip"><div id="erRoomName"></div><div id="erTip"></div></div>
-          <div id="erDoor"><div class="lock">🔒</div><div class="left" id="erLeft"></div><div id="erKeys"></div></div>
-        </div>
-        <div id="erObjects"></div>
-      </div>
-      <div id="erPuzzle">
-        <div id="erPuzzleHead">
-          <button id="erBack">⬅ Back to the room</button>
-          <div id="erType"></div>
-          <button id="erHint"></button>
-        </div>
-        <div id="erClue"></div>
-        <div id="erAnswer"></div>
-        <div id="erMsg"></div>
-        <div id="erPad"></div>
+      <div id="erMain">
+        <div id="erScene"></div>
+        <div id="erBook"><h3>📒 Clue notebook</h3><div id="erClues"></div></div>
       </div>
     </div>
     <div id="erEnd">
@@ -626,6 +652,7 @@
       <div id="erSummary" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
       <button id="erAgain">🔄 Play again</button>
     </div>
+    <div id="erModal"><div class="panel" id="erPanel"></div></div>
   </div>
 
 <script src="words.js"></script>
@@ -1363,7 +1390,7 @@ const decoder = (function () {
   $('dcAgain').onclick = newGame;
   show('dcStart');
 
-  return { stop };
+  return { stop, CIPHERS }; // the Escape Room borrows the ciphers for its secret-code clues
 })();
 
 // ===== Blaster game =====
@@ -2489,282 +2516,460 @@ const escapeRoom = (function () {
   const panels = ['erStart', 'erGame', 'erEnd'];
   const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
   const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
-  // Two rooms. The first half of the words hide in room 1; finding all its keys opens the door to room 2.
-  // Finding all of room 2's keys is the escape. Each word hides behind one object in its room.
+
+  // --- The two rooms ---
+  // Each thing: e = emoji, name, x/y = center as % of the room, s = size (% of the room's width).
+  // lock: can hold a word lock. hint finishes "This opens something ..." (a clue's word hint).
+  // free: never locked; may hide a starting clue. where finishes "You look ...".
   const ROOMS = [
-    { name: 'Room 1: The Living Room', cls: 'living', objects: [
-      ['📚', 'Bookshelf'], ['🕰️', 'Clock'], ['🖼️', 'Painting'], ['🧸', 'Teddy bear'], ['🪴', 'Plant'],
-      ['💡', 'Lamp'], ['🛋️', 'Couch'], ['🪑', 'Chair'], ['📻', 'Radio'], ['🏺', 'Vase'],
-      ['🪞', 'Mirror'], ['🎁', 'Present'], ['🧺', 'Basket'] ] },
-    { name: 'Room 2: The Secret Attic', cls: 'attic', objects: [
-      ['🧳', 'Suitcase'], ['📦', 'Box'], ['🗄️', 'Cabinet'], ['🎹', 'Piano'], ['🗺️', 'Map'],
-      ['💻', 'Computer'], ['🎒', 'Backpack'], ['🧰', 'Toolbox'], ['🎩', 'Top hat'], ['⏳', 'Hourglass'],
-      ['🧥', 'Coat'], ['🔭', 'Telescope'], ['🕯️', 'Candle'] ] },
+    { name: 'The Living Room', cls: 'living', decor: '<div class="er-window"></div><div class="er-rug"></div>', things: [
+      { e: '🖼️', name: 'painting', x: 22, y: 18, s: 7, free: true, where: 'behind the painting' },
+      { e: '🕰️', name: 'clock', x: 6, y: 36, s: 10, lock: true, hint: 'that goes tick-tock' },
+      { e: '📺', name: 'TV', x: 64, y: 26, s: 7, lock: true, hint: 'that shows cartoons' },
+      { e: '🚪', name: 'door', x: 88, y: 37, s: 15, door: true },
+      { e: '🐷', name: 'piggy bank', x: 33, y: 64, s: 5, lock: true, hint: 'shaped like a pink animal that eats coins' },
+      { e: '🎹', name: 'piano', x: 21, y: 52, s: 10, lock: true, hint: 'with black and white keys' },
+      { e: '📔', name: 'diary', x: 38, y: 34, s: 4, lock: true, hint: 'where someone writes their secrets' },
+      { e: '🗄️', name: 'cabinet', x: 38, y: 48, s: 9, lock: true, hint: 'with drawers you pull out' },
+      { e: '🏺', name: 'vase', x: 56, y: 50, s: 5, free: true, where: 'inside the vase' },
+      { e: '🪴', name: 'plant', x: 74, y: 50, s: 8, free: true, where: 'in the flower pot' },
+      { e: '🛋️', name: 'couch', x: 50, y: 68, s: 12, free: true, where: 'under the couch cushions' },
+      { e: '📦', name: 'box', x: 9, y: 82, s: 9, lock: true, hint: 'made of brown cardboard' },
+      { e: '🎒', name: 'backpack', x: 26, y: 85, s: 7, lock: true, hint: 'you take to school' },
+      { e: '💼', name: 'briefcase', x: 41, y: 89, s: 6, lock: true, hint: 'that grown-ups carry to work' },
+      { e: '🎁', name: 'present', x: 57, y: 86, s: 7, lock: true, hint: 'wrapped up with a bow' },
+      { e: '🧺', name: 'basket', x: 70, y: 88, s: 6, free: true, where: 'in the basket' },
+      { e: '🧳', name: 'suitcase', x: 83, y: 74, s: 9, lock: true, hint: 'you pack for a trip' },
+      { e: '🧸', name: 'teddy bear', x: 94, y: 88, s: 6, lock: true, hint: 'soft and cuddly, with a zipper on its back' },
+    ] },
+    { name: 'The Secret Attic', cls: 'attic', decor: '<div class="er-roof l"></div><div class="er-roof r"></div><div class="er-round"></div>', things: [
+      { e: '🕸️', name: 'cobweb', x: 7, y: 10, s: 8, free: true, where: 'in the sticky cobweb (eek!)' },
+      { e: '🧥', name: 'coat', x: 24, y: 30, s: 8, free: true, where: 'in the coat pockets' },
+      { e: '💻', name: 'computer', x: 11, y: 50, s: 7, lock: true, hint: 'that needs a password' },
+      { e: '📕', name: 'old book', x: 30, y: 38, s: 4, lock: true, hint: 'with a red cover' },
+      { e: '🗃️', name: 'file box', x: 30, y: 51, s: 7, lock: true, hint: 'full of old papers' },
+      { e: '🎩', name: 'magic hat', x: 46, y: 35, s: 5, lock: true, hint: 'that a magician pulls rabbits out of' },
+      { e: '🗄️', name: 'dresser', x: 46, y: 50, s: 9, lock: true, hint: 'with lots of drawers' },
+      { e: '🕯️', name: 'candle', x: 61, y: 46, s: 4, free: true, where: 'under the candle' },
+      { e: '📻', name: 'radio', x: 61, y: 57, s: 6, lock: true, hint: 'that plays music and news' },
+      { e: '🔭', name: 'telescope', x: 73, y: 38, s: 8, lock: true, hint: 'for looking at the stars' },
+      { e: '🚪', name: 'door', x: 90, y: 37, s: 15, door: true },
+      { e: '⏰', name: 'alarm clock', x: 81, y: 57, s: 4, lock: true, hint: 'that rings in the morning' },
+      { e: '🪑', name: 'chair', x: 81, y: 70, s: 8, free: true, where: 'under the chair' },
+      { e: '🧰', name: 'toolbox', x: 11, y: 86, s: 8, lock: true, hint: 'full of tools' },
+      { e: '📦', name: 'crate', x: 27, y: 84, s: 8, lock: true, hint: 'that was shipped from far away' },
+      { e: '🪆', name: 'nesting doll', x: 42, y: 88, s: 5, free: true, where: 'inside the nesting doll' },
+      { e: '🎻', name: 'violin', x: 57, y: 84, s: 8, lock: true, hint: 'you play with a bow' },
+      { e: '💰', name: 'money bag', x: 72, y: 88, s: 7, lock: true, hint: 'with a dollar sign on it' },
+    ] },
   ];
+  const NOTHING = ['Nothing here but dust bunnies.', 'Just an old sock. 🧦', 'A spider waves hello. 🕷️ No clue here.',
+    'Hmm, nothing useful here.', 'You find a button. 🔘 Not very helpful!', 'Nope, nothing. Keep looking!'];
   const bestTimes = {}; // list name -> fastest escape in ms, this session only
 
-  let puzzles, cur, room, startTime, tick, running = false, solving = false, backTimer, roomTip;
+  let rooms, room, startTime, tick, running = false, modal = null;
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-  // Pick a puzzle for a word: a riddle or a picture if it has one, otherwise its meaning as a secret note
-  function makePuzzle(w, room, obj) {
-    const key = w.word.toLowerCase();
+  // --- Setting up a room ---
+  // The room's words go on random lockable things. They're split into 1-3 chains: the first clue of each
+  // chain hides in a random free thing, each lock holds the next clue, and the last lock holds a key piece.
+  function buildRoom(r, words) {
+    const def = ROOMS[r];
+    const things = def.things.map(t => ({ ...t, word: null, open: false, holds: null, searched: false }));
+    const locks = shuffle(things.filter(t => t.lock)).slice(0, words.length);
+    locks.forEach((t, i) => {
+      const key = words[i].word.toLowerCase();
+      t.word = words[i];
+      t.key = key;
+      t.given = [...key].map(ch => !ALPHABET.includes(ch)); // apostrophes are filled in already
+      t.answer = [...key].map((ch, k) => t.given[k] ? ch : '');
+      t.ghost = 0; t.hints = 0; t.tries = 0;
+    });
+    const free = shuffle(things.filter(t => t.free));
+    const chains = Math.min(free.length, words.length >= 7 ? 3 : words.length >= 3 ? 2 : words.length);
+    const used = {};
+    const clues = [];
+    for (let c = 0; c < chains; c++) {
+      let holder = free[c];
+      locks.forEach((t, i) => {
+        if (i % chains !== c) return;
+        const clue = makeClue(t, used);
+        clues.push(clue);
+        holder.holds = clue;
+        holder = t;
+      });
+      holder.holds = 'piece';
+    }
+    return { def, things, clues, pieces: chains, got: 0, doorOpen: false };
+  }
+
+  // A clue for a lock's word. Each clue type is used about equally within a room.
+  function makeClue(t, used) {
+    const key = t.key, w = t.word;
+    const letters = /^[a-z]+$/.test(key);
     const kinds = [];
     if (RIDDLES[key]) kinds.push('riddle');
     if (PICTURES[key]) kinds.push('picture');
-    if (!kinds.length) kinds.push(w.meaning ? 'note' : 'listen');
-    const kind = kinds[Math.floor(Math.random() * kinds.length)];
-    // anything that isn't a letter (the apostrophe in don't) is filled in already
-    const given = [...key].map(ch => !ALPHABET.includes(ch));
-    return { word: w.word, key, kind, meaning: w.meaning, room, obj, given,
-      answer: [...key].map((ch, i) => given[i] ? ch : ''), hinted: [...key].map(() => false),
-      solved: false, hints: 0, tries: 0 };
+    if (w.meaning) kinds.push('note');
+    if (letters) kinds.push('search');
+    kinds.push('code');
+    if (letters && new Set(key).size > 1) kinds.push('scramble');
+    const fewest = Math.min(...kinds.map(k => used[k] || 0));
+    const kind = pick(kinds.filter(k => (used[k] || 0) === fewest));
+    used[kind] = (used[kind] || 0) + 1;
+    const clue = { kind, target: t, key, word: w.word, meaning: w.meaning, found: false, solved: false,
+      style: Math.random() < 0.5 ? 'pic' : 'words' }; // how the clue says which lock it opens
+    if (kind === 'search') clue.grid = makeSearch(key);
+    if (kind === 'code') clue.cipher = pick(Object.keys(decoder.CIPHERS));
+    if (kind === 'scramble') {
+      let s;
+      do s = shuffle([...key]).join(''); while (s === key);
+      clue.scrambled = s;
+    }
+    return clue;
   }
 
+  // A small word search with the word hidden once, across or down
+  function makeSearch(key) {
+    const across = key.length > 6 || Math.random() < 0.6;
+    const rows = across ? 5 : Math.max(key.length + 2, 6), cols = across ? Math.max(key.length + 2, 6) : 6;
+    const cells = Array.from({ length: rows * cols }, () => pick(ALPHABET));
+    const r0 = Math.floor(Math.random() * (rows - (across ? 0 : key.length - 1)));
+    const c0 = Math.floor(Math.random() * (cols - (across ? key.length - 1 : 0)));
+    [...key].forEach((ch, i) => { cells[(r0 + (across ? 0 : i)) * cols + c0 + (across ? i : 0)] = ch; });
+    return { rows, cols, cells };
+  }
+
+  // --- Game ---
   function newGame() {
-    clearTimeout(backTimer);
     const words = shuffle(WORDS);
     const half = Math.ceil(words.length / 2);
-    const objs = ROOMS.map(r => shuffle(r.objects));
-    puzzles = words.map((w, i) => {
-      const r = i < half ? 0 : 1, k = r === 0 ? i : i - half;
-      return makePuzzle(w, r, objs[r][k % objs[r].length]);
-    });
-    cur = -1; room = 0; solving = false; running = true;
-    roomTip = 'Click an object to search it. Each one hides a puzzle!';
+    rooms = [buildRoom(0, words.slice(0, half))];
+    if (words.length > half) rooms.push(buildRoom(1, words.slice(half)));
+    room = 0; running = true;
     startTime = Date.now();
     clearInterval(tick);
     tick = setInterval(showTime, 250);
     showTime();
-    $('erTotal').textContent = puzzles.length;
+    $('erTotal').textContent = words.length;
+    $('erRooms').textContent = rooms.length;
+    closeModal();
     show('erGame');
-    showRoom();
+    render();
   }
 
   function stop() {
     running = false;
     clearInterval(tick);
-    clearTimeout(backTimer);
+    closeModal();
     show('erStart');
     showBest();
   }
 
   const clock = ms => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   function showTime() { $('erTime').textContent = clock(Date.now() - startTime); }
+  const listName = () => WORD_LISTS.find(l => l.words === WORDS)?.name;
   function showBest() {
-    const name = WORD_LISTS.find(l => l.words === WORDS)?.name;
+    const name = listName();
     $('erStartBest').textContent = bestTimes[name] ? '⏱️ Fastest escape from ' + name + ': ' + clock(bestTimes[name]) : '';
   }
 
-  // --- The room ---
-  function showRoom() {
-    cur = -1;
-    $('erPuzzle').style.display = 'none';
-    $('erRoom').style.display = 'block';
-    $('erRoom').className = ROOMS[room].cls;
-    $('erRoomName').textContent = ROOMS[room].name;
+  // --- Drawing the room and the notebook ---
+  function render() {
+    const R = rooms[room];
     $('erRoomNum').textContent = room + 1;
-    $('erTip').textContent = roomTip;
-    $('erGot').textContent = puzzles.filter(p => p.solved).length;
-    const here = puzzles.filter(p => p.room === room);
-    const left = here.filter(p => !p.solved).length;
-    const last = room === ROOMS.length - 1 || !puzzles.some(p => p.room > room);
-    $('erLeft').textContent = (left === 1 ? '1 key' : left + ' keys') + (last ? ' to escape' : ' to open the door');
-    $('erKeys').innerHTML = here.map(p => '<span' + (p.solved ? '' : ' class="off"') + '>🔑</span>').join('');
-    const box = $('erObjects');
-    box.innerHTML = '';
-    puzzles.forEach((p, i) => {
-      if (p.room !== room) return;
+    $('erGot').textContent = rooms.reduce((n, x) => n + x.things.filter(t => t.word && t.open).length, 0);
+    $('erPieces').textContent = R.got;
+    $('erPiecesTotal').textContent = R.pieces;
+    const scene = $('erScene');
+    scene.className = R.def.cls;
+    scene.innerHTML = R.def.decor;
+    R.things.forEach((t, i) => {
       const b = document.createElement('button');
-      b.className = 'er-obj' + (p.solved ? ' done' : '');
-      b.innerHTML = '<span class="e">' + p.obj[0] + '</span>' + p.obj[1] + (p.solved ? '<span class="got">🔑</span>' : '');
-      b.onclick = e => { e.currentTarget.blur(); if (!p.solved) openPuzzle(i); };
-      box.appendChild(b);
+      b.className = 'er-thing' + (t.word && t.open ? ' done' : '');
+      b.style.left = t.x + '%';
+      b.style.top = t.y + '%';
+      b.style.setProperty('--s', t.s);
+      const badge = t.door ? (R.doorOpen ? '' : '🔒') : t.word ? (t.open ? '🔓' : '🔒') : '';
+      b.innerHTML = '<span class="e">' + t.e + '</span><span class="lbl">' + esc(t.name) + '</span>' +
+        (badge ? '<span class="badge">' + badge + '</span>' : '');
+      b.onclick = e => { e.currentTarget.blur(); inspect(i); };
+      scene.appendChild(b);
     });
+    // notebook: clues found in this room, ones still to solve first
+    const found = R.clues.filter(c => c.found);
+    $('erClues').innerHTML = found.length
+      ? [...found.filter(c => !c.solved), ...found.filter(c => c.solved)].map(card).join('')
+      : '<div class="er-empty">No clues yet. Search the room! Try looking in, under, and behind things.</div>';
   }
 
-  // --- One puzzle ---
-  const say = text => speak(text.replace(/_+/g, 'blank'));
-  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
-  function openPuzzle(i) {
-    cur = i; solving = true;
-    const p = puzzles[i];
-    $('erRoom').style.display = 'none';
-    $('erPuzzle').style.display = 'block';
-    $('erMsg').textContent = '';
-    $('erAnswer').className = '';
-    const readBtn = canSpeak ? '<button id="erRead">🔊 Read it</button>' : '';
-    if (p.kind === 'riddle') {
-      $('erType').textContent = p.obj[0] + ' You found a riddle!';
-      $('erClue').innerHTML = esc(RIDDLES[p.key]) + readBtn;
-    } else if (p.kind === 'picture') {
-      $('erType').textContent = p.obj[0] + ' You found a picture! What is it?';
-      $('erClue').innerHTML = '<div class="pic">' + PICTURES[p.key] + '</div>';
-    } else if (p.kind === 'note') {
-      $('erType').textContent = p.obj[0] + ' You found a secret note!';
-      $('erClue').innerHTML = '📜 "' + esc(p.meaning) + '"' + readBtn;
+  // A clue card: which lock it opens, then the puzzle
+  function card(c) {
+    const t = c.target, id = rooms[room].clues.indexOf(c);
+    if (c.solved) return '<div class="er-card solved">✅ <b>' + esc(c.word) + '</b> opened the ' + t.e + ' ' + esc(t.name) + '</div>';
+    const to = c.style === 'pic'
+      ? '🔒 This opens: <span class="mini">' + t.e + '</span>'
+      : '🔒 This opens something ' + esc(t.hint) + '.';
+    const read = canSpeak ? '<button data-act="read" data-c="' + id + '">🔊 Read it</button>' : '';
+    let body;
+    if (c.kind === 'riddle') body = '<span class="kind">🧩 Riddle:</span> ' + esc(RIDDLES[c.key]) + '<br>' + read;
+    else if (c.kind === 'picture') body = '<span class="kind">🖼️ What is this?</span><div class="pic">' + PICTURES[c.key] + '</div>';
+    else if (c.kind === 'note') body = '<span class="kind">📜 A note says:</span> "' + esc(c.meaning) + '"<br>' + read;
+    else if (c.kind === 'search') {
+      body = '<span class="kind">🔎 Find the hidden word!</span><br><div class="er-ws" style="grid-template-columns: repeat(' +
+        c.grid.cols + ', auto)">' + c.grid.cells.map(ch => '<span data-act="cell">' + ch.toUpperCase() + '</span>').join('') + '</div>';
+    } else if (c.kind === 'code') {
+      const ci = decoder.CIPHERS[c.cipher];
+      body = '<span class="kind">🔐 Secret code: ' + esc(ci.name) + '</span><div class="er-code">' +
+        [...c.key].map(ch => ALPHABET.includes(ch) ? '<div class="dc-sym">' + ci.symbol(ch) + '</div>' : '<div class="er-gap">' + esc(ch) + '</div>').join('') +
+        '</div><button data-act="ckey">🔑 Show the key</button><div class="er-keybox"><div class="tray key">' + ci.key() + '</div></div>';
     } else {
-      $('erType').textContent = p.obj[0] + ' You found a talking ' + p.obj[1].toLowerCase() + '!';
-      $('erClue').innerHTML = canSpeak ? '<button id="erRead">🔊 Hear the word</button>' : 'Spell: ' + esc(p.word);
+      body = '<span class="kind">🔀 Unscramble:</span><div class="er-tiles">' + [...c.scrambled].map(ch => '<span>' + ch + '</span>').join('') + '</div>';
     }
-    if ($('erRead')) $('erRead').onclick = e => {
-      e.currentTarget.blur();
-      if (p.kind === 'riddle') say(RIDDLES[p.key]);
-      else if (p.kind === 'note') say(p.meaning);
-      else speak(p.word);
-    };
-    if (p.kind === 'listen') speak(p.word);
-    renderAnswer();
+    return '<div class="er-card"><div class="to">' + to + '</div>' + body + '</div>';
   }
 
-  function renderAnswer() {
-    const p = puzzles[cur];
-    const next = p.answer.indexOf('');
-    $('erAnswer').innerHTML = p.answer.map((ch, i) => {
-      let cls = 'er-box';
-      const ghost = !ch && p.hinted[i];
-      if (p.given[i]) cls += ' given';
-      else if (ch) cls += ' filled';
+  // --- Clicking things ---
+  function inspect(i) {
+    if (!running) return;
+    const R = rooms[room], t = R.things[i];
+    if (t.door) return doorModal();
+    if (t.word && !t.open) return lockModal(t);
+    if (t.word) return openModal(head(t, '🔓 The ' + t.name + ' is open.') + '<div class="say">There\'s nothing else inside.</div>' + okBtn());
+    if (t.free && !t.searched) {
+      t.searched = true;
+      if (t.holds) return foundModal(t, 'You look ' + t.where + '...');
+      return openModal(head(t, 'You look ' + t.where + '...') + '<div class="say">' + pick(NOTHING) + '</div>' + okBtn());
+    }
+    if (t.free) return openModal(head(t, 'You already looked ' + t.where + '.') + '<div class="say">Nothing else here.</div>' + okBtn());
+    return openModal(head(t, 'The ' + t.name + ' isn\'t locked.') + '<div class="say">' + pick(NOTHING) + '</div>' + okBtn());
+  }
+
+  const head = (t, text) => '<div class="head"><span class="e">' + t.e + '</span>' + esc(text) + '</div>';
+  const okBtn = (label = 'OK') => '<button class="ok" data-act="close">' + label + '</button>';
+
+  // What's inside a free thing or an opened lock: a clue, or a piece of the door key
+  function contents(t) {
+    const R = rooms[room];
+    if (t.holds === 'piece') {
+      R.got++;
+      const all = R.got === R.pieces;
+      return '<div class="say">Inside you find a piece of the door key! 🔑 (' + R.got + ' of ' + R.pieces + ')</div>' +
+        (all ? '<div class="say">🗝️ That\'s the whole key! Go open the door 🚪</div>' : '');
+    }
+    if (t.holds) {
+      t.holds.found = true;
+      return '<div class="say">You found a clue! 📒 It\'s in your notebook too.</div>' + card(t.holds);
+    }
+    return '<div class="say">' + pick(NOTHING) + '</div>';
+  }
+
+  function foundModal(t, text) {
+    openModal(head(t, text) + contents(t) + okBtn());
+  }
+
+  function doorModal() {
+    const R = rooms[room];
+    const last = room === rooms.length - 1;
+    if (R.got < R.pieces) {
+      return openModal('<div class="head"><span class="e">🚪</span>The door is locked tight.</div>' +
+        '<div class="say">The lock needs ' + R.pieces + ' key pieces. You have ' + R.got + '.<br>Open the locks in this room to find them!</div>' + okBtn());
+    }
+    R.doorOpen = true;
+    render();
+    openModal('<div class="head"><span class="e">🗝️</span>The key fits! Click!</div>' +
+      '<div class="say">The door swings open...</div>' + okBtn(last ? 'Escape! ➜' : 'Go to the next room ➜').replace('data-act="close"', 'data-act="through"'));
+  }
+
+  function goThrough() {
+    closeModal();
+    if (room === rooms.length - 1) return finish();
+    room++;
+    render();
+    openModal('<div class="head"><span class="e">🚪</span>You made it to ' + esc(rooms[room].def.name) + '!</div>' +
+      '<div class="say">But this door is locked too... Search for clues to find the key!</div>' + okBtn("Let's go!"));
+  }
+
+  // --- A word lock ---
+  function lockModal(t) {
+    modal = { type: 'lock', t };
+    const R = rooms[room];
+    const open = R.clues.filter(c => c.found && !c.solved);
+    showPanel(head(t, 'The ' + t.name + ' is locked!') +
+      '<div class="say">It has a word lock with ' + t.answer.filter((a, k) => !t.given[k]).length + ' letters. What\'s the secret word?</div>' +
+      '<div class="er-dials" id="erDials"></div><div id="erLockMsg"></div>' +
+      '<div class="er-tools"><button class="hint" data-act="hint" id="erHintBtn"></button><button data-act="close">⬅ Back to the room</button></div>' +
+      '<div class="er-pad">' + [...ALPHABET].map(ch => '<button data-act="key" data-ch="' + ch + '">' + ch + '</button>').join('') +
+      '<button class="wide" data-act="del">⌫ Delete</button></div>' +
+      '<div class="yourClues"><h4>📒 Your clues</h4>' + (open.length ? open.map(card).join('') : '<div class="er-empty">No clues yet. Search the room!</div>') + '</div>');
+    renderDials();
+  }
+
+  function renderDials() {
+    const t = modal.t;
+    const next = t.answer.indexOf('');
+    $('erDials').innerHTML = t.answer.map((ch, i) => {
+      let cls = 'er-dial';
+      const ghost = !ch && i < t.ghost && !t.given[i];
+      if (t.given[i]) cls += ' given';
       else if (ghost) cls += ' ghost';
-      if (i === next && !p.solved) cls += ' next';
-      return '<div class="' + cls + '" data-i="' + i + '">' + esc(ghost ? p.key[i] : ch) + '</div>';
+      if (i === next && !t.open) cls += ' next';
+      return '<div class="' + cls + '" data-act="dial" data-i="' + i + '">' + esc(ghost ? t.key[i] : ch) + '</div>';
     }).join('');
-    $('erAnswer').querySelectorAll('.er-box').forEach(el =>
-      el.addEventListener('pointerdown', e => { e.preventDefault(); clearAt(+el.dataset.i); }));
-    // Hint 1 shows the first letter. Hint 2 says the word (or shows the next letter if the browser can't speak).
-    $('erHint').textContent = p.hints === 0 ? '💡 Hint: first letter' : p.hints === 1 ? (canSpeak ? '💡 Hint: hear the word' : '💡 Hint: next letter') : '💡 Hear it again';
-    $('erHint').style.display = p.solved || (p.hints >= 2 && !canSpeak) ? 'none' : '';
+    // Hint 1 shows the first letter faintly (he still types it). Hint 2 says the word.
+    const b = $('erHintBtn');
+    if (!b) return;
+    b.textContent = t.hints === 0 ? '💡 Hint: first letter' : canSpeak ? (t.hints === 1 ? '💡 Hint: hear the word' : '💡 Hear it again') : '💡 Hint: next letter';
+    b.style.display = t.open ? 'none' : '';
   }
 
   function hint() {
-    const p = puzzles[cur];
-    if (!solving || p.solved) return;
-    if (p.hints >= 2) { speak(p.word); return; }
-    if (p.hints === 0 || !canSpeak) {
-      // show the next letter faintly in its box; he still types it himself
-      const i = p.hinted.findIndex((h, k) => !h && !p.given[k]);
-      if (i >= 0) p.hinted[i] = true;
-    } else {
-      speak(p.word);
-    }
-    p.hints++;
-    changed();
-    renderAnswer();
+    const t = modal.t;
+    if (t.open) return;
+    if (t.hints === 0 || !canSpeak) {
+      do t.ghost++; while (t.ghost < t.key.length && t.given[t.ghost - 1]);
+    } else speak(t.word.word);
+    t.hints++;
+    renderDials();
   }
 
-  function changed() {
-    $('erAnswer').classList.remove('wrong');
-    $('erMsg').textContent = '';
-  }
+  function lockMsg(text) { $('erLockMsg').textContent = text; }
 
   function typeLetter(ch) {
-    const p = puzzles[cur];
-    const i = p.answer.indexOf('');
-    if (i < 0) return;
-    p.answer[i] = ch;
-    changed();
-    renderAnswer();
-    checkDone();
+    const t = modal.t;
+    const i = t.answer.indexOf('');
+    if (i < 0 || t.open) return;
+    t.answer[i] = ch;
+    $('erDials').classList.remove('wrong');
+    lockMsg('');
+    renderDials();
+    if (!t.answer.includes('')) tryLock();
   }
 
-  function clearAt(i) {
-    const p = puzzles[cur];
-    if (!solving || p.solved || p.given[i] || !p.answer[i]) return;
-    p.answer[i] = '';
-    changed();
-    renderAnswer();
+  function clearDial(i) {
+    const t = modal.t;
+    if (t.open || t.given[i] || !t.answer[i]) return;
+    t.answer[i] = '';
+    $('erDials').classList.remove('wrong');
+    lockMsg('');
+    renderDials();
   }
 
   function backspace() {
-    const p = puzzles[cur];
-    for (let i = p.answer.length - 1; i >= 0; i--) {
-      if (p.answer[i] && !p.given[i]) return clearAt(i);
-    }
+    const t = modal.t;
+    for (let i = t.answer.length - 1; i >= 0; i--) if (t.answer[i] && !t.given[i]) return clearDial(i);
   }
 
-  function checkDone() {
-    const p = puzzles[cur];
-    if (p.answer.includes('')) return;
-    if (p.answer.join('') === p.key) return solved();
-    p.tries++;
-    const el = $('erAnswer');
+  function tryLock() {
+    const t = modal.t, guess = t.answer.join('');
+    if (guess === t.key) return unlock(t);
+    const el = $('erDials');
     el.classList.remove('wrong');
     void el.offsetWidth; // restart the shake animation
     el.classList.add('wrong');
-    $('erMsg').textContent = 'Not quite. Check your spelling and try again!';
+    const other = rooms[room].things.find(x => x.word && !x.open && x !== t && x.key === guess);
+    if (other) lockMsg('That\'s a secret word, but not for this lock! Check which lock the clue opens.');
+    else { t.tries++; lockMsg('The lock won\'t open. Check your spelling!'); }
   }
 
-  function solved() {
-    const p = puzzles[cur];
-    p.solved = true;
-    $('erAnswer').classList.add('good');
-    renderAnswer();
-    speak(p.word);
-    const roomDone = puzzles.every(x => x.room !== room || x.solved);
-    const all = puzzles.every(x => x.solved);
-    $('erMsg').textContent = all ? '🔑 That\'s the last key! The door is opening...'
-      : roomDone ? '🔑 That\'s the last key in this room! The door is opening...' : '🔑 You found a key!';
-    // back to the room after a moment, or right away with Enter
-    clearTimeout(backTimer);
-    backTimer = setTimeout(afterSolve, roomDone ? 1800 : 1300);
+  function unlock(t) {
+    t.open = true;
+    const clue = rooms[room].clues.find(c => c.target === t);
+    if (clue) clue.solved = true;
+    speak(t.word.word);
+    $('erDials').classList.add('good');
+    renderDials();
+    lockMsg('🔓 Click! It opened!');
+    // after a moment, show what's inside
+    modal.timer = setTimeout(() => {
+      if (!modal || modal.t !== t) return;
+      render();
+      openModal(head(t, 'The ' + t.name + ' is open!') + contents(t) + okBtn());
+    }, 900);
   }
 
-  function afterSolve() {
-    clearTimeout(backTimer);
-    solving = false;
-    if (puzzles.every(x => x.solved)) return finish();
-    if (puzzles.every(x => x.room !== room || x.solved)) {
-      room++; // on to the next room
-      roomTip = '🚪 The door opened! You made it to the next room. Find these keys to escape!';
+  // --- The pop-up ---
+  function showPanel(html) {
+    $('erPanel').innerHTML = '<button class="close" data-act="close">✕</button>' + html;
+    $('erModal').style.display = 'flex';
+    $('erPanel').scrollTop = 0;
+  }
+  function openModal(html) {
+    if (modal && modal.timer) clearTimeout(modal.timer);
+    modal = { type: 'info' };
+    showPanel(html);
+  }
+  function closeModal() {
+    if (modal && modal.timer) clearTimeout(modal.timer);
+    modal = null;
+    $('erModal').style.display = 'none';
+    if (running) render();
+  }
+
+  // Buttons in the pop-up and the notebook
+  function act(el) {
+    const a = el.dataset.act;
+    if (a === 'close') closeModal();
+    else if (a === 'through') goThrough();
+    else if (a === 'hint') hint();
+    else if (a === 'dial') clearDial(+el.dataset.i);
+    else if (a === 'cell') el.classList.toggle('on');
+    else if (a === 'ckey') {
+      const box = el.closest('.er-card').querySelector('.er-keybox');
+      box.classList.toggle('show');
+      el.textContent = box.classList.contains('show') ? '🔑 Hide the key' : '🔑 Show the key';
+    } else if (a === 'read') {
+      const c = rooms[room].clues[+el.dataset.c];
+      speak((c.kind === 'riddle' ? RIDDLES[c.key] : c.meaning).replace(/_+/g, 'blank'));
     }
-    showRoom();
   }
+  // letter keys use pointerdown so fast tapping works and the page doesn't move focus
+  $('escapeGame').addEventListener('pointerdown', e => {
+    const el = e.target.closest('[data-act="key"], [data-act="del"]');
+    if (!el || !modal || modal.type !== 'lock') return;
+    e.preventDefault();
+    if (el.dataset.act === 'key') typeLetter(el.dataset.ch); else backspace();
+  });
+  $('escapeGame').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (!el || el.dataset.act === 'key' || el.dataset.act === 'del') return;
+    act(el);
+  });
+  $('erModal').addEventListener('click', e => { if (e.target === $('erModal')) closeModal(); }); // click outside the box
 
   function finish() {
     running = false;
     clearInterval(tick);
+    closeModal();
     const ms = Date.now() - startTime;
-    const name = WORD_LISTS.find(l => l.words === WORDS)?.name;
-    const best = bestTimes[name];
+    const name = listName(), best = bestTimes[name];
     const record = best === undefined || ms < best;
     if (record) bestTimes[name] = ms;
     show('erEnd');
     $('erFinalTime').textContent = '⏱️ ' + clock(ms);
-    const hints = puzzles.reduce((n, p) => n + p.hints, 0);
-    const practice = puzzles.filter(p => p.hints || p.tries).map(p => esc(p.word));
+    const locks = rooms.flatMap(R => R.things.filter(t => t.word));
+    const hints = locks.reduce((n, t) => n + t.hints, 0);
+    const practice = locks.filter(t => t.hints || t.tries).map(t => esc(t.word.word));
     $('erSummary').innerHTML =
       (record && best !== undefined ? '🏆 New fastest escape!<br>' : best !== undefined ? 'Fastest escape: ' + clock(best) + '<br>' : '') +
       'Hints used: <b>' + hints + '</b><br>' +
-      (practice.length ? 'Words to practice: <b>' + practice.join(', ') + '</b>' : '⭐ Every word right with no hints! ⭐');
+      (practice.length ? 'Words to practice: <b>' + practice.join(', ') + '</b>' : '⭐ Every lock opened with no hints or misses! ⭐');
   }
-
-  // --- On-screen letters, for tablets ---
-  for (const ch of ALPHABET) {
-    const b = document.createElement('button');
-    b.textContent = ch;
-    b.addEventListener('pointerdown', e => { e.preventDefault(); if (solving && !puzzles[cur].solved) typeLetter(ch); });
-    $('erPad').appendChild(b);
-  }
-  const del = document.createElement('button');
-  del.textContent = '⌫ Delete';
-  del.className = 'wide';
-  del.addEventListener('pointerdown', e => { e.preventDefault(); if (solving && !puzzles[cur].solved) backspace(); });
-  $('erPad').appendChild(del);
 
   window.addEventListener('keydown', e => {
-    if (!running || !solving || e.ctrlKey || e.metaKey || e.altKey) return;
-    const p = puzzles[cur];
-    if (p.solved) {
-      if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); afterSolve(); }
-      return;
+    if (!running || !modal || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (modal.type === 'lock' && !modal.t.open) {
+      if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); backspace(); }
+      else if (/^[a-z]$/i.test(e.key)) typeLetter(e.key.toLowerCase());
+    } else if (modal.type === 'info' && e.key === 'Enter' && !e.repeat) {
+      e.preventDefault();
+      const btn = $('erPanel').querySelector('[data-act="through"]');
+      if (btn) goThrough(); else closeModal();
     }
-    if (e.key === 'Escape') { solving = false; showRoom(); }
-    else if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); backspace(); }
-    else if (/^[a-z]$/i.test(e.key)) typeLetter(e.key.toLowerCase());
   });
 
-  $('erBack').onclick = e => { e.currentTarget.blur(); if (puzzles[cur]?.solved) afterSolve(); else { solving = false; showRoom(); } };
-  $('erHint').onclick = e => { e.currentTarget.blur(); hint(); };
   $('erGo').onclick = e => { e.currentTarget.blur(); newGame(); };
   $('erAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
   show('erStart');
