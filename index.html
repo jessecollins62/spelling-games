@@ -148,6 +148,36 @@
   }
   .kitem .kl { font-size: 1.3rem; }
   .kitem .kc { font-size: 0.95rem; }
+  /* morse maker */
+  #morseGame { max-width: 1000px; }
+  #morseGame.mode > div { width: 100%; text-align: center; }
+  #mmGame, #mmEnd { display: none; }
+  #mmEnd .score { font-size: 3.5rem; color: #ffd84a; margin: 10px 0; }
+  #mmWord { font-size: 1.5rem; margin: 4px 0 10px; }
+  #mmWord b { color: #ffd84a; font-size: 2rem; letter-spacing: 2px; }
+  #mmWord button { font-size: 1rem; padding: 5px 12px; margin-left: 10px; vertical-align: middle; box-shadow: 0 3px 0 #b88f00; }
+  #mmPuzzle { display: flex; flex-wrap: wrap; gap: 14px 10px; justify-content: center; margin: 10px 0; }
+  .mm-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .mm-letter { font-size: 2.6rem; font-weight: bold; line-height: 1; min-width: 40px; }
+  .mm-code {
+    min-width: 76px; height: 54px; padding: 0 8px; border-radius: 12px; border: 3px dashed #ffd84a55;
+    background: rgba(255,216,74,.06); display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .mm-col.cur .mm-code { border: 3px solid #fff; background: #fff6d0; box-shadow: 0 0 0 4px rgba(255,216,74,.5); }
+  .mm-col.done .mm-code { border: 3px solid #2f9e4f; background: #bff5cb; }
+  .mm-col.done .mm-letter { color: #8fe0a3; }
+  .mm-col.cur .mm-letter { color: #ffd84a; }
+  .mm-col.wrong .mm-code { border-color: #ff6b6b; background: #ffd0d0; animation: shake 0.4s; }
+  .mm-col.given .mm-code { visibility: hidden; min-width: 10px; }
+  .mm-code .mdot { background: #3a2400; }
+  .mm-code .mdash { background: #3a2400; }
+  #mmMsg { font-size: 1.5rem; min-height: 1.6em; margin: 6px 0; }
+  #mmPad { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; touch-action: manipulation; }
+  #mmPad button { font-size: 1.4rem; padding: 10px 22px; min-width: 90px; }
+  #mmPad .space { min-width: 200px; font-size: 1.1rem; }
+  #mmPad .del { background: #fff3c4; font-size: 1.1rem; }
+  #mmHow { font-size: 1.05rem; opacity: .85; }
+  #mmKeyBtn { font-size: 1rem; padding: 6px 14px; margin-top: 10px; background: #c9b3ff; box-shadow: 0 4px 0 #6b4bb5; }
   /* blaster */
   #blasterGame { width: 100%; max-width: 900px; }
   #blasterGame.mode > div { width: 100%; text-align: center; }
@@ -414,6 +444,7 @@
     <button id="tabCurtain" class="active">🎭 Curtain Game</button>
     <button id="tabScramble">🔤 Word Scramble</button>
     <button id="tabDecode">🔐 Code Breaker</button>
+    <button id="tabMorse">📡 Morse Maker</button>
     <button id="tabBlaster">☄️ Blaster</button>
     <button id="tabCrossword">✏️ Crossword</button>
     <button id="tabWordGuess">🟩 Word Guess</button>
@@ -516,6 +547,44 @@
       <div class="score"><span id="dcFinal">0</span> pts</div>
       <div id="dcOutOf" style="font-size:1.3rem; margin-bottom:20px"></div>
       <button id="dcAgain">🔄 Restart</button>
+    </div>
+  </div>
+
+  <div id="morseGame" class="mode" style="display:none">
+    <div id="mmStart">
+      <p style="font-size:1.4rem">Be a telegraph operator! Turn each spelling word into Morse code.<br>
+        Type <b>.</b> for a dot and <b>-</b> for a dash. Press <b>space</b> when a letter is done.<br>
+        Use the key at the bottom to look up each letter.<br>
+        1000 pts for a word with no mistakes, 500 pts if you had to fix one.</p>
+      <button id="mmGo">Start!</button>
+    </div>
+    <div id="mmGame">
+      <div class="hud">
+        <div>Word <b id="mmNum">1</b> / <b id="mmTotal">20</b></div>
+        <div>Score <b id="mmScore">0</b></div>
+      </div>
+      <div id="mmWord"></div>
+      <div id="mmPuzzle"></div>
+      <div id="mmMsg"></div>
+      <div id="mmPad">
+        <button data-mm="." aria-label="dot">•</button>
+        <button data-mm="-" aria-label="dash">—</button>
+        <button data-mm=" " class="space">space (next letter)</button>
+        <button data-mm="del" class="del">⌫ Delete</button>
+      </div>
+      <div id="mmHow">Keys: <b>.</b> dot &nbsp; <b>-</b> dash &nbsp; <b>space</b> next letter &nbsp; <b>Delete</b> take one back</div>
+      <button id="mmKeyBtn">🙈 Hide the key</button>
+      <div id="mmKeyBox">
+        <div class="tray-label">Key: Morse code</div>
+        <div id="mmKey" class="tray key"></div>
+      </div>
+    </div>
+    <div id="mmEnd">
+      <h2>Message sent! 📡</h2>
+      <div class="score"><span id="mmFinal">0</span> pts</div>
+      <div id="mmOutOf" style="font-size:1.3rem; margin-bottom:8px"></div>
+      <div id="mmMissed" style="font-size:1.3rem; margin:10px 0 20px; line-height:1.6"></div>
+      <button id="mmAgain">🔄 Restart</button>
     </div>
   </div>
 
@@ -1467,7 +1536,172 @@ const decoder = (function () {
   $('dcAgain').onclick = newGame;
   show('dcStart');
 
-  return { stop, CIPHERS }; // the Escape Room borrows the ciphers for its secret-code clues
+  return { stop, CIPHERS, MORSE }; // Escape Room borrows the ciphers for its secret-code clues; Morse Maker uses MORSE
+})();
+
+// ===== Morse maker: spell the word in Morse code =====
+const morseMaker = (function () {
+  const POINTS = [1000, 500]; // no mistakes / fixed at least one letter
+  const MAX_SYMBOLS = 5;      // no letter needs more than 4; one extra so a mistake can still be typed
+  const panels = ['mmStart', 'mmGame', 'mmEnd'];
+  const show = id => panels.forEach(p => $(p).style.display = p === id ? 'block' : 'none');
+  const MORSE = decoder.MORSE;
+  $('mmKey').innerHTML = decoder.CIPHERS.morse.key();
+
+  let words, idx, score, missed, current, codes, cur, mistakes, locked = false, running = false, advance = null, nextTimer, wrongTimer;
+
+  function newGame() {
+    advance = null;
+    clearTimeout(nextTimer);
+    words = shuffle(WORDS);
+    idx = 0; score = 0; missed = []; running = true;
+    $('mmTotal').textContent = words.length;
+    show('mmGame');
+    showWord();
+  }
+
+  function stop() {
+    advance = null;
+    clearTimeout(nextTimer);
+    running = false;
+    show('mmStart');
+  }
+
+  function showWord() {
+    current = words[idx].word;
+    // letters get a Morse box; anything else (the apostrophe in don't) is shown but skipped
+    codes = [...current].map(ch => MORSE[ch.toLowerCase()] ? '' : null);
+    cur = codes.findIndex(c => c !== null);
+    mistakes = 0; locked = false;
+    $('mmNum').textContent = idx + 1;
+    $('mmScore').textContent = score;
+    $('mmWord').innerHTML = 'Send this word: <b>' + current.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</b>' +
+      (canSpeak ? '<button id="mmHear">🔊</button>' : '');
+    if ($('mmHear')) $('mmHear').onclick = e => { e.currentTarget.blur(); speak(current); };
+    say('');
+    render();
+  }
+
+  const drawCode = code => [...code].map(s => '<span class="' + (s === '.' ? 'mdot' : 'mdash') + '"></span>').join('');
+
+  function render() {
+    $('mmPuzzle').innerHTML = [...current].map((ch, i) => {
+      if (codes[i] === null) return '<div class="mm-col given"><div class="mm-letter">' + ch + '</div><div class="mm-code"></div></div>';
+      const state = i < cur || locked ? ' done' : i === cur ? ' cur' : '';
+      return '<div class="mm-col' + state + '" data-i="' + i + '"><div class="mm-letter">' + ch.toLowerCase() + '</div>' +
+        '<div class="mm-code">' + drawCode(codes[i]) + '</div></div>';
+    }).join('');
+  }
+
+  function say(text) { $('mmMsg').textContent = text; }
+
+  function clearWrong() {
+    clearTimeout(wrongTimer);
+    const el = document.querySelector('#mmPuzzle .mm-col.wrong');
+    if (el) el.classList.remove('wrong');
+  }
+
+  function addSymbol(s) {
+    if (locked || codes[cur].length >= MAX_SYMBOLS) return;
+    clearWrong();
+    codes[cur] += s;
+    say('');
+    render();
+  }
+
+  function backspace() {
+    if (locked || !codes[cur]) return;
+    codes[cur] = codes[cur].slice(0, -1);
+    say('');
+    render();
+  }
+
+  // Space: check the current letter. Right moves on; wrong shakes and clears it.
+  function nextLetter() {
+    if (locked) return;
+    const ch = current[cur].toLowerCase();
+    if (!codes[cur]) { say('Type dots and dashes for "' + ch + '" first.'); return; }
+    if (codes[cur] === MORSE[ch]) {
+      let n = cur + 1;
+      while (n < codes.length && codes[n] === null) n++;
+      if (n >= codes.length) return win();
+      cur = n;
+      say('');
+      render();
+      return;
+    }
+    mistakes++;
+    say('That\'s not the code for "' + ch + '". Look at the key and try again!');
+    codes[cur] = '';
+    render();
+    const el = document.querySelector('#mmPuzzle .mm-col[data-i="' + cur + '"]');
+    if (el) { el.classList.add('wrong'); wrongTimer = setTimeout(() => el.classList.remove('wrong'), 500); }
+  }
+
+  function win() {
+    locked = true;
+    const pts = POINTS[mistakes ? 1 : 0];
+    score += pts;
+    if (mistakes) missed.push(current);
+    $('mmScore').textContent = score;
+    say('📡 Message sent! +' + pts);
+    render();
+    const last = idx === words.length - 1;
+    // move on after a moment, or right away with Enter or space
+    advance = () => {
+      advance = null;
+      clearTimeout(nextTimer);
+      if (last) finish();
+      else { idx++; showWord(); }
+    };
+    nextTimer = setTimeout(advance, 1300);
+  }
+
+  function finish() {
+    running = false;
+    show('mmEnd');
+    $('mmFinal').textContent = score;
+    $('mmOutOf').textContent = 'out of ' + (words.length * POINTS[0]) + ' possible';
+    $('mmMissed').innerHTML = missed.length
+      ? 'Words to practice: <b>' + missed.map(w => w.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join(', ') + '</b>'
+      : '⭐ Every word sent with no mistakes! ⭐';
+  }
+
+  function press(k) {
+    if (!running) return;
+    if (locked) { if ((k === ' ' || k === 'Enter') && advance) advance(); return; }
+    if (k === '.') addSymbol('.');
+    else if (k === '-') addSymbol('-');
+    else if (k === ' ' || k === 'Enter') nextLetter();
+    else if (k === 'del') backspace();
+  }
+
+  window.addEventListener('keydown', e => {
+    if (!running || e.ctrlKey || e.metaKey || e.altKey) return;
+    let k = e.key;
+    if (k === '_' || k === '—' || k === '–') k = '-'; // other dash keys count as a dash
+    if (k === 'Backspace' || k === 'Delete') k = 'del';
+    if (!['.', '-', ' ', 'Enter', 'del'].includes(k)) return;
+    e.preventDefault(); // no page scrolling on space
+    if (!e.repeat || k === '.' || k === '-') press(k);
+  });
+  $('mmPad').addEventListener('pointerdown', e => {
+    const b = e.target.closest('[data-mm]');
+    if (!b) return;
+    e.preventDefault();
+    press(b.dataset.mm);
+  });
+  $('mmKeyBtn').onclick = e => {
+    e.currentTarget.blur();
+    const hidden = $('mmKeyBox').style.display === 'none';
+    $('mmKeyBox').style.display = hidden ? '' : 'none';
+    e.currentTarget.textContent = hidden ? '🙈 Hide the key' : '👀 Show the key';
+  };
+  $('mmGo').onclick = e => { e.currentTarget.blur(); newGame(); };
+  $('mmAgain').onclick = e => { e.currentTarget.blur(); newGame(); };
+  show('mmStart');
+
+  return { stop };
 })();
 
 // ===== Blaster game =====
@@ -3273,6 +3507,7 @@ const GAMES = {
   curtain:  { tab: 'tabCurtain',  panel: 'curtainGame',  round: 'game',   stop: () => curtain.stop() },
   scramble: { tab: 'tabScramble', panel: 'scrambleGame', round: 'scGame', stop: () => scramble.stop() },
   decode:   { tab: 'tabDecode',   panel: 'decodeGame',   round: 'dcGame', stop: () => decoder.stop() },
+  morse:    { tab: 'tabMorse',    panel: 'morseGame',    round: 'mmGame', stop: () => morseMaker.stop() },
   blaster:  { tab: 'tabBlaster',  panel: 'blasterGame',  round: 'blGame', stop: () => blaster.stop() },
   crossword: { tab: 'tabCrossword', panel: 'crosswordGame', round: 'cwGame', stop: () => crossword.stop() },
   wordguess: { tab: 'tabWordGuess', panel: 'wordguessGame', round: 'wgGame', stop: () => wordGuess.stop() },

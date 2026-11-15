@@ -8,7 +8,7 @@ A browser-based set of spelling games for a young learner. Everything runs as pl
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app: styles, the nine games, tab switching, and the word-list menus. One file, roughly 3,300 lines. |
+| `index.html` | The whole app: styles, the ten games, tab switching, and the word-list menus. One file, roughly 3,550 lines. |
 | `words.js` | Word list data (`WORD_LISTS`) and the `fd()` decoy helper. Loaded by both HTML pages. Edit this to add or change lists; the HTML does not need to change. |
 | `meanings.js` | Kid-friendly meanings (`MEANINGS`) for the 987 LMB words that don't have one in `words.js`. Loaded after `words.js` by `index.html`; it fills in `meaning` only where a word has none. Used as Crossword clues. |
 | `dictionary.js` | The English word list (`DICTIONARY`, public-domain ENABLE list with rude words removed) that Word Blitz uses to check bonus words. Big (1.7 MB), so `index.html` loads it only when Word Blitz is opened. |
@@ -44,7 +44,7 @@ Only `word` and `decoys` are required. `meaning` and `lookalikes` are optional; 
 
 ### Current lists
 
-1. **School lists:** **Long E list**, **Long A list**, **Long O list**, **Long U list**, and **R controlled vowels**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all nine games.
+1. **School lists:** **Long E list**, **Long A list**, **Long O list**, **Long U list**, and **R controlled vowels**: 20 words each, hand-written with decoys, meanings, and lookalikes. These work in all ten games.
 2. **LMB 1 – LMB 100**: 10 words each, all 1,000 Seeing Stars words in order. `word` plus auto-generated `decoys: fd("...")` in `words.js`, with meanings from `meanings.js` (13 LMB words also appear in the Long lists and use those meanings). They work in every game except Blaster (no lookalikes). See `LMB-reference.md`; the next series would start at LMB 101.
 
 ### `fd(word)`: auto decoys
@@ -62,7 +62,7 @@ These are simple. Sometimes they make a real word (e.g. `I` → `E`, `Is`), and 
 Order in the file:
 
 1. **`<style>`**: all CSS.
-2. **Markup**: title, tab bar (`#tabs`), word-list menus (`#listSchool`, `#listLMB`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordblitzGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
+2. **Markup**: title, tab bar (`#tabs`), word-list menus (`#listSchool`, `#listLMB`), then one container per game (`#curtainGame`, `#scrambleGame`, `#decodeGame`, `#morseGame`, `#blasterGame`, `#crosswordGame`, `#wordguessGame`, `#wordblitzGame`, `#wordhuntGame`, `#escapeGame`). Each game has three panels: start, in-game, and end.
 3. **`words.js`**, **`meanings.js`**, and **`puzzles.js`**, then a **shared helpers** script:
    - `$(id)`: shorthand for `getElementById`.
    - `WORDS`: the active list's `words` array. All games read from it.
@@ -127,6 +127,17 @@ Every game uses the whole active list in random order. Pointer events (`pointerd
 - Full and correct scores **1000**; wrong shakes and lets them fix it.
 - No speech in this game; the point is to decode.
 - Ciphers are defined in the `CIPHERS` table (`name`, `symbol(ch)`, `key()`). **The same cipher code is copied into `print.html`**, so a change to one should be made in both.
+
+### 📡 Morse Maker: spell the word in Morse code
+
+- Code Breaker in reverse. The word is shown in English ("Send this word: turtle", with 🔊 to hear it), with one column per letter: the letter on top and a box for its Morse code underneath.
+- He types **`.`** for a dot and **`-`** for a dash (`_`, `–`, and `—` also count as a dash); they're drawn as dots and dashes in the current letter's box. **Space** (or Enter) finishes the letter and checks it. **Backspace/Delete** removes the last dot or dash. On-screen buttons (• — space ⌫) do the same for tablets.
+- Each letter is checked when he presses space: right turns it green and moves to the next letter; wrong shakes, clears that letter, and says "That's not the code for "b"." Space with nothing typed says to type dots and dashes first. Up to 5 symbols per letter (`MAX_SYMBOLS`).
+- Anything that isn't a letter (the apostrophe in `don't`) is shown but skipped. Capitals are fine (`Easter`).
+- The Morse key (from Code Breaker) is shown below; **🙈 Hide the key** hides it for a challenge.
+- Scoring (`POINTS`): **1000** for a word with no wrong letters, **500** if any letter had to be fixed. After a word: "📡 Message sent!", then it moves on after about 1 second (or right away with space or Enter). End screen: score out of the maximum and "Words to practice".
+- Uses `decoder.MORSE` and `decoder.CIPHERS.morse.key()`, so the Morse table lives only in Code Breaker.
+
 
 ### ☄️ Blaster: shoot the word that matches the meaning
 
